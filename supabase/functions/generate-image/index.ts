@@ -148,14 +148,14 @@ Deno.serve(async (req) => {
       throw new Error('无效的图片格式')
     }
 
-    // 构建可灵 API 请求
+    // 构建可灵 API 请求 - 竖屏 9:16 (1024×1792)
     const requestBody = {
       model_name: AI_CONFIG.model,
       prompt: job.prompt,
       negative_prompt: '模糊, 低质量, 变形, 丑陋, 多余肢体',
       subject_image_list: [imageData],
       n: 1,
-      aspect_ratio: '1:1',
+      aspect_ratio: '9:16',
     }
 
     console.log('⏳ 提交可灵任务...', 'prompt:', job.prompt.substring(0, 50) + '...')
