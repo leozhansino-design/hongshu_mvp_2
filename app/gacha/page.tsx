@@ -53,20 +53,22 @@ export default function GachaPage() {
   const [currentSubtitle, setCurrentSubtitle] = useState(FUNNY_SUBTITLES[0]);
   const [subtitleIndex, setSubtitleIndex] = useState(0);
 
-  // 进度条动画 (约16秒)
+  // 进度条动画 (支持重试，最长约60秒)
   useEffect(() => {
     if (!isLoading) return;
 
-    const duration = 16000; // 16秒
-    const interval = 100; // 每100ms更新
-    const increment = 100 / (duration / interval);
-
     const timer = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 95) return 95; // 最多到95%，等待实际完成
-        return prev + increment;
+        // 慢慢增长，最多到95%
+        if (prev >= 95) return 95;
+        // 前30秒快速增长到60%，之后慢慢增长
+        if (prev < 60) {
+          return prev + 0.33; // 约30秒到60%
+        } else {
+          return prev + 0.1; // 之后慢慢增长
+        }
       });
-    }, interval);
+    }, 100);
 
     return () => clearInterval(timer);
   }, [isLoading]);
@@ -106,56 +108,77 @@ export default function GachaPage() {
     track(EVENTS.GACHA_START, { petType, weights });
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
-
-      const response = await fetch('/api/generate', {
+      // 第一步：创建任务
+      console.log('📤 创建生成任务...');
+      const startResponse = await fetch('/api/generate/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ petImage, petType, weights }),
-        signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (!startResponse.ok) {
+        const errorData = await startResponse.json();
+        throw new Error(errorData.error || '创建任务失败');
+      }
 
-      if (!response.ok) {
-        if (response.status === 504) {
-          throw new Error('服务器处理超时，请重试');
+      const startData = await startResponse.json();
+      if (!startData.success || !startData.data?.jobId) {
+        throw new Error(startData.error || '创建任务失败');
+      }
+
+      const jobId = startData.data.jobId;
+      console.log('✅ 任务创建成功:', jobId);
+
+      // 第二步：轮询查询状态
+      const maxPolls = 40; // 最多轮询40次（约2分钟）
+      const pollInterval = 3000; // 每3秒查询一次
+
+      for (let poll = 0; poll < maxPolls; poll++) {
+        console.log(`🔄 查询状态 (${poll + 1}/${maxPolls})...`);
+
+        try {
+          const statusResponse = await fetch(`/api/generate/status/${jobId}`);
+          const statusData = await statusResponse.json();
+
+          console.log('📊 状态:', statusData.status);
+
+          if (statusData.status === 'completed' && statusData.data) {
+            // 完成！
+            setProgress(100);
+            setResult(statusData.data);
+            track(EVENTS.GACHA_RESULT, {
+              rarity: statusData.data.rarity,
+              titleId: statusData.data.titleId,
+              title: statusData.data.title,
+            });
+            track(EVENTS.API_GENERATION_SUCCESS, {
+              rarity: statusData.data.rarity,
+              prompt: statusData.data.prompt,
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          if (statusData.status === 'failed') {
+            throw new Error(statusData.error || '生成失败');
+          }
+
+          // 仍在处理中，等待后继续轮询
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+        } catch (pollError) {
+          console.error('轮询错误:', pollError);
+          // 轮询错误不直接失败，等待后重试
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
         }
-        throw new Error(`请求失败: ${response.status}`);
       }
 
-      const data = await response.json();
+      // 轮询超时
+      throw new Error('生成超时，请重试');
 
-      if (data.success && data.data) {
-        setProgress(100);
-        setResult(data.data);
-        track(EVENTS.GACHA_RESULT, {
-          rarity: data.data.rarity,
-          titleId: data.data.titleId,
-          title: data.data.title,
-        });
-        track(EVENTS.API_GENERATION_SUCCESS, {
-          rarity: data.data.rarity,
-          prompt: data.data.prompt,
-        });
-      } else {
-        setError(data.error || '生成失败，请重试');
-        track(EVENTS.API_GENERATION_FAIL, { error: data.error });
-      }
     } catch (err) {
       console.error('生成错误:', err);
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          setError('请求超时，请重试');
-        } else {
-          setError(err.message || '网络错误，请重试');
-        }
-      } else {
-        setError('网络错误，请重试');
-      }
-      track(EVENTS.API_GENERATION_FAIL, { error: 'network_error' });
-    } finally {
+      setError(err instanceof Error ? err.message : '生成失败，请重试');
+      track(EVENTS.API_GENERATION_FAIL, { error: err instanceof Error ? err.message : 'unknown' });
       setIsLoading(false);
     }
   }, [router]);

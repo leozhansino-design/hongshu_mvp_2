@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomTitle, rollRarityWithBonus, Rarity, TitleData } from '@/lib/titles';
 
-// 使用 Node.js Runtime - 支持 maxDuration 配置
-// Hobby 计划最长 60 秒，Pro 计划最长 300 秒
-export const runtime = 'nodejs';
-export const maxDuration = 60; // 秒
+// 使用 Edge Runtime - Hobby 计划最长 30 秒
+export const runtime = 'edge';
 
 // AI 图片生成配置
 const AI_CONFIG = {
@@ -86,9 +84,9 @@ export async function POST(request: NextRequest) {
     let generatedImageUrl: string | null = null;
 
     try {
-      // 设置 55 秒超时（留 5 秒余量给其他处理）
+      // 设置 28 秒超时（Edge Runtime 限制 30 秒，留 2 秒余量）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 55000);
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
 
       const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
         method: 'POST',
