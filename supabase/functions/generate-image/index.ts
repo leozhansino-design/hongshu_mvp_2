@@ -137,11 +137,16 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId)
 
-    // 准备图片数据 - 可灵需要图片 URL 或 base64
+    // 准备图片数据 - 可灵需要纯 base64（不带 data:image 前缀）或 URL
     let imageData: string
     if (job.pet_image.startsWith('data:image')) {
-      // base64 格式，直接使用
-      imageData = job.pet_image
+      // 去掉 data:image/xxx;base64, 前缀，只保留纯 base64
+      const base64Match = job.pet_image.match(/^data:image\/\w+;base64,(.+)$/)
+      if (base64Match) {
+        imageData = base64Match[1]
+      } else {
+        throw new Error('无效的 base64 图片格式')
+      }
     } else if (job.pet_image.startsWith('http')) {
       imageData = job.pet_image
     } else {
