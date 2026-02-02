@@ -1,4 +1,4 @@
-// Supabase Edge Function: 处理 AI 图片生成 (可灵 Kling API)
+// Supabase Edge Function: 处理 AI 图片生成
 // 部署方法见 README
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -6,19 +6,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
-  model: 'kling-v2',
-  // 使用多图参考生图端点
-  submitEndpoint: '/kling/v1/images/multi-image2image',
-  queryEndpoint: '/kling/v1/images/generations',
+  model: 'gemini-3-pro-image-preview',
+  endpoint: '/v1/images/generations',
 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-// 延时函数
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -80,34 +75,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 检查是否正在处理中（防止重复处理）
-    if (job.status === 'processing' && job.kling_task_id) {
-      // 如果已经有 kling_task_id，直接查询状态
-      console.log('⏳ 已有可灵任务，查询状态:', job.kling_task_id)
-      const result = await pollKlingTask(job.kling_task_id)
-
-      if (result.success && result.imageUrl) {
-        await supabase
-          .from('generation_jobs')
-          .update({
-            status: 'completed',
-            generated_image: result.imageUrl,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', jobId)
-
-        return new Response(
-          JSON.stringify({ success: true, status: 'completed' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      } else if (result.status === 'processing') {
-        return new Response(
-          JSON.stringify({ success: true, status: 'processing' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      } else if (result.failed) {
-        throw new Error(result.error || '可灵生成失败')
-      }
+    // 检查状态 - 正在处理中
+    if (job.status === 'processing') {
+      console.log('⏳ 任务处理中:', jobId)
+      return new Response(
+        JSON.stringify({ success: true, status: 'processing', message: '正在生成中...' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // 检查重试次数
@@ -138,40 +112,20 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId)
 
-    // 准备图片数据 - 可灵需要纯 base64（不带 data:image 前缀）
-    let imageData: string
-    if (job.pet_image.startsWith('data:image')) {
-      // 去掉 data:image/xxx;base64, 前缀，只保留纯 base64
-      const commaIndex = job.pet_image.indexOf(',')
-      if (commaIndex !== -1) {
-        imageData = job.pet_image.substring(commaIndex + 1)
-        console.log('📷 图片格式: base64, 长度:', imageData.length)
-      } else {
-        throw new Error('无效的 base64 图片格式')
-      }
-    } else if (job.pet_image.startsWith('http')) {
-      imageData = job.pet_image
-      console.log('📷 图片格式: URL')
-    } else {
-      throw new Error('无效的图片格式，需要 data:image 或 http URL')
-    }
-
-    // 构建可灵 API 请求 - 多图参考生图
-    // subject_image_list 是数组，直接放纯 base64 字符串
+    // 构建 API 请求 - 标准图片生成格式
     const requestBody = {
-      model_name: AI_CONFIG.model,
+      model: AI_CONFIG.model,
       prompt: job.prompt,
-      negative_prompt: '模糊, 低质量, 变形, 丑陋, 多余肢体',
-      subject_image_list: [imageData],  // 数组格式
       n: 1,
-      aspect_ratio: '9:16',
+      size: '1024x1792',  // 竖屏 9:16
     }
 
-    console.log('⏳ 提交可灵任务...', 'prompt:', job.prompt.substring(0, 50) + '...')
+    console.log('⏳ 调用 AI API...', 'model:', AI_CONFIG.model)
+    console.log('📝 Prompt:', job.prompt.substring(0, 100) + '...')
     const startTime = Date.now()
 
-    // 1. 提交任务到可灵
-    const submitResponse = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.submitEndpoint}`, {
+    // 调用 AI API
+    const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
@@ -180,54 +134,51 @@ Deno.serve(async (req) => {
       body: JSON.stringify(requestBody),
     })
 
-    const submitData = await submitResponse.json()
-    console.log('📦 可灵提交响应:', JSON.stringify(submitData))
+    const responseTime = Date.now() - startTime
+    console.log('⏱️ API 响应时间:', responseTime, 'ms')
 
-    if (submitData.code !== 0 || !submitData.data?.task_id) {
-      throw new Error(submitData.message || '提交可灵任务失败')
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ API 错误:', response.status, errorText)
+      throw new Error(`${AI_CONFIG.model} failed: ${response.status}, ${errorText}`)
     }
 
-    const klingTaskId = submitData.data.task_id
-    console.log('✅ 可灵任务已提交:', klingTaskId)
+    const data = await response.json()
+    console.log('📦 API 响应:', JSON.stringify(data).substring(0, 200))
 
-    // 保存 kling_task_id
+    // 获取生成的图片 URL
+    let imageUrl: string | null = null
+
+    if (data.data && data.data[0]) {
+      imageUrl = data.data[0].url || data.data[0].b64_json
+      if (data.data[0].b64_json && !data.data[0].url) {
+        // 如果返回的是 base64，转换为 data URL
+        imageUrl = `data:image/png;base64,${data.data[0].b64_json}`
+      }
+    }
+
+    if (!imageUrl) {
+      throw new Error('未获取到生成的图片')
+    }
+
+    console.log('✅ 图片生成成功')
+
+    // 更新为完成状态
     await supabase
       .from('generation_jobs')
-      .update({ kling_task_id: klingTaskId })
+      .update({
+        status: 'completed',
+        generated_image: imageUrl,
+        completed_at: new Date().toISOString(),
+      })
       .eq('id', jobId)
 
-    // 2. 轮询等待结果（最多等待 120 秒）
-    const result = await pollKlingTask(klingTaskId, 120000)
+    console.log('✅ 任务完成:', jobId)
+    return new Response(
+      JSON.stringify({ success: true, status: 'completed' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
-    const responseTime = Date.now() - startTime
-    console.log('⏱️ 总用时:', responseTime, 'ms')
-
-    if (result.success && result.imageUrl) {
-      // 更新为完成状态
-      console.log('📝 更新为完成状态:', jobId)
-      await supabase
-        .from('generation_jobs')
-        .update({
-          status: 'completed',
-          generated_image: result.imageUrl,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', jobId)
-
-      console.log('✅ 任务完成:', jobId)
-      return new Response(
-        JSON.stringify({ success: true, status: 'completed' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    } else if (result.status === 'processing') {
-      // 还在处理中，让前端继续轮询
-      return new Response(
-        JSON.stringify({ success: true, status: 'processing' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    } else {
-      throw new Error(result.error || '可灵生成失败')
-    }
   } catch (error) {
     console.error('❌ 处理失败:', error)
 
@@ -272,65 +223,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
-// 轮询可灵任务状态
-async function pollKlingTask(taskId: string, maxWaitMs = 120000): Promise<{
-  success: boolean;
-  imageUrl?: string;
-  status?: string;
-  failed?: boolean;
-  error?: string;
-}> {
-  const startTime = Date.now()
-  const pollInterval = 3000  // 每 3 秒查询一次
-
-  while (Date.now() - startTime < maxWaitMs) {
-    try {
-      const queryUrl = `${AI_CONFIG.baseUrl}${AI_CONFIG.queryEndpoint}/${taskId}`
-      console.log('🔍 查询可灵任务:', taskId)
-
-      const response = await fetch(queryUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
-        },
-      })
-
-      const data = await response.json()
-      console.log('📦 可灵查询响应:', JSON.stringify(data).substring(0, 200))
-
-      if (data.code !== 0) {
-        console.error('❌ 查询失败:', data.message)
-        return { success: false, failed: true, error: data.message }
-      }
-
-      const taskStatus = data.data?.task_status
-
-      if (taskStatus === 'succeed') {
-        // 成功，获取图片
-        const images = data.data?.task_result?.images
-        if (images && images.length > 0) {
-          const imageUrl = images[0].url
-          console.log('✅ 可灵生成成功:', imageUrl)
-          return { success: true, imageUrl }
-        }
-        return { success: false, failed: true, error: '未获取到图片' }
-      } else if (taskStatus === 'failed') {
-        const errorMsg = data.data?.task_status_msg || '生成失败'
-        console.error('❌ 可灵生成失败:', errorMsg)
-        return { success: false, failed: true, error: errorMsg }
-      } else {
-        // 还在处理中 (submitted / processing)
-        console.log('⏳ 可灵任务状态:', taskStatus)
-      }
-    } catch (e) {
-      console.error('❌ 查询出错:', e)
-    }
-
-    await delay(pollInterval)
-  }
-
-  // 超时，但任务可能还在处理
-  console.log('⏰ 轮询超时，任务可能还在处理')
-  return { success: false, status: 'processing' }
-}
