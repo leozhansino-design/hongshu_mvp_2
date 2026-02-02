@@ -48,6 +48,9 @@ export async function POST(request: NextRequest) {
     let generatedImageUrl = petImage; // 默认使用原图
 
     // 调用 AI 生成图片
+    console.log('🔑 API Key 状态:', AI_CONFIG.apiKey ? '已配置' : '未配置');
+    console.log('🌐 API Base URL:', AI_CONFIG.baseUrl);
+
     if (AI_CONFIG.apiKey) {
       try {
         // 准备参考图片数组
@@ -57,9 +60,11 @@ export async function POST(request: NextRequest) {
           // 提取 base64 数据（去掉 data:image/xxx;base64, 前缀）
           const base64Data = petImage.split(',')[1];
           imageArray.push(base64Data);
+          console.log('📷 图片格式: base64, 大小:', Math.round(base64Data.length / 1024), 'KB');
         } else if (petImage.startsWith('http')) {
           // 如果是 URL，直接添加
           imageArray.push(petImage);
+          console.log('📷 图片格式: URL');
         }
 
         // 准备请求体 - 使用 nano-banana-2 格式
@@ -68,7 +73,6 @@ export async function POST(request: NextRequest) {
           model: AI_CONFIG.model,
           response_format: 'url', // 返回 URL 格式
           aspect_ratio: '1:1', // 正方形图片
-          image_size: '1K', // 1K 画质
         };
 
         // 添加参考图片数组
@@ -80,8 +84,12 @@ export async function POST(request: NextRequest) {
           url: `${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`,
           model: AI_CONFIG.model,
           hasImage: imageArray.length > 0,
+          imageSize: imageArray.length > 0 ? Math.round(imageArray[0].length / 1024) + 'KB' : 'N/A',
           prompt: enhancedPrompt,
         });
+
+        console.log('⏳ 开始调用 AI API...');
+        const startTime = Date.now();
 
         const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
           method: 'POST',
@@ -92,9 +100,12 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify(requestBody),
         });
 
+        const endTime = Date.now();
+        console.log(`⏱️ API 响应时间: ${endTime - startTime}ms`);
+
         const data = await response.json();
         console.log('🖼️ API 响应状态:', response.status);
-        console.log('🖼️ API 响应:', JSON.stringify(data).substring(0, 500));
+        console.log('🖼️ API 响应内容:', JSON.stringify(data).substring(0, 1000));
 
         if (data.data && data.data[0] && data.data[0].url) {
           generatedImageUrl = data.data[0].url;
@@ -104,11 +115,13 @@ export async function POST(request: NextRequest) {
           generatedImageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
           console.log('✅ 图片生成成功 (base64)');
         } else {
-          console.log('⚠️ 图片生成失败，API 响应:', data);
+          console.log('⚠️ 图片生成失败，完整 API 响应:', JSON.stringify(data));
           console.log('⚠️ 使用原图作为结果');
         }
       } catch (error) {
         console.error('❌ AI 生成错误:', error);
+        console.error('❌ 错误详情:', error instanceof Error ? error.message : String(error));
+        console.error('❌ 错误堆栈:', error instanceof Error ? error.stack : 'N/A');
         // 失败时使用原图
       }
     } else {
