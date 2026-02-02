@@ -154,11 +154,12 @@ Deno.serve(async (req) => {
     }
 
     // 构建可灵 API 请求 - 竖屏 9:16 (1024×1792)
+    // subject_image_list 需要是对象数组，每个对象包含 image 字段
     const requestBody = {
       model_name: AI_CONFIG.model,
       prompt: job.prompt,
       negative_prompt: '模糊, 低质量, 变形, 丑陋, 多余肢体',
-      subject_image_list: [imageData],
+      subject_image_list: [{ image: imageData }],
       n: 1,
       aspect_ratio: '9:16',
     }
