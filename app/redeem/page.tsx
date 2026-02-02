@@ -61,7 +61,7 @@ export default function RedeemPage() {
   const handlePayClick = () => {
     track(EVENTS.BTN_PAY_CLICK);
     // TODO: 跳转到购买页面或显示购买弹窗
-    alert('购买功能开发中...\n\n测试卡密：TEST001、DEMO123、VIP888');
+    alert('购买功能开发中，敬请期待！');
   };
 
   if (!petImage) {
@@ -161,7 +161,7 @@ export default function RedeemPage() {
           transition={{ delay: 0.5 }}
           className="text-center text-gray-400 text-xs mt-8"
         >
-          测试卡密：TEST001、DEMO123、VIP888
+          输入卡密开始探索你的宠物真实身份
         </motion.p>
       </div>
     </main>
