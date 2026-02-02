@@ -62,8 +62,43 @@ export default function ResultPage() {
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const edgeFunctionCalledRef = useRef(false);
 
   const jobId = params.id as string;
+
+  // 直接调用 Supabase Edge Function 处理图片生成
+  const triggerEdgeFunction = useCallback(async () => {
+    if (edgeFunctionCalledRef.current) return;
+    edgeFunctionCalledRef.current = true;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase config');
+      return;
+    }
+
+    try {
+      console.log('🚀 前端直接调用 Edge Function:', jobId);
+      // 浏览器没有超时限制，Edge Function 支持 150 秒
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId }),
+      });
+
+      const data = await response.json();
+      console.log('📡 Edge Function 响应:', data);
+      // 无论成功失败，Realtime 或轮询会处理状态更新
+    } catch (err) {
+      console.error('Edge Function 调用失败:', err);
+      // 失败了也没关系，轮询会继续
+    }
+  }, [jobId]);
 
   // 处理任务完成
   const handleJobComplete = useCallback((data: {
@@ -223,6 +258,9 @@ export default function ResultPage() {
     // 首次立即检查状态
     pollStatus();
 
+    // 触发 Edge Function 处理（浏览器没有超时限制）
+    triggerEdgeFunction();
+
     // 设置兜底轮询（每 10 秒）
     pollingRef.current = setInterval(pollStatus, 10000);
 
@@ -235,7 +273,7 @@ export default function ResultPage() {
         clearInterval(pollingRef.current);
       }
     };
-  }, [jobId, pollStatus, handleJobComplete, handleJobFailed]);
+  }, [jobId, pollStatus, handleJobComplete, handleJobFailed, triggerEdgeFunction]);
 
   // 趣味内容轮播
   useEffect(() => {
