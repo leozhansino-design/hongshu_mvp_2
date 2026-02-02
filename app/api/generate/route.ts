@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomTitle, rollRarityWithBonus, Rarity, TitleData } from '@/lib/titles';
 
+// 设置 Vercel Serverless Function 最大执行时间为 60 秒
+// 因为 AI 图片生成可能需要 15-30 秒
+export const maxDuration = 60;
+
 // AI 图片生成配置
 const AI_CONFIG = {
   baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
