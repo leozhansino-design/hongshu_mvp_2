@@ -76,6 +76,8 @@ export async function POST(request: NextRequest) {
     const enhancedPrompt = buildEnhancedPrompt(titleData.prompt, petType);
 
     console.log('🎲 稀有度:', rarity, '称号:', titleData.title);
+    console.log('📝 原始 Prompt:', titleData.prompt);
+    console.log('🎨 完整 Prompt:', enhancedPrompt);
 
     // 生成任务ID
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
