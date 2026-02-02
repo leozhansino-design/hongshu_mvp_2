@@ -8,7 +8,7 @@ export const runtime = 'edge';
 const AI_CONFIG = {
   baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
   apiKey: process.env.AI_API_KEY || '',
-  model: 'nano-banana',
+  model: 'gemini-3-pro-image-preview',
   endpoint: '/v1/images/generations',
 };
 
