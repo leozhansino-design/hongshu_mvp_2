@@ -87,6 +87,7 @@ export default function GachaPage() {
       }
 
       console.log('✅ 任务创建成功:', data.data.jobId);
+      console.log('📝 发送的 Prompt:', data.data.prompt);
 
       // 保存任务ID到 sessionStorage
       sessionStorage.setItem('currentJobId', data.data.jobId);

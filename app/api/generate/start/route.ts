@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
         jobId,
         rarity,
         title: titleData.title,
+        prompt: enhancedPrompt,  // 返回完整 prompt 方便调试
       },
     });
   } catch (error) {
