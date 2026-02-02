@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { trackPageView } from '@/lib/analytics';
+import { getUnlockProgress } from '@/lib/collection';
 
 // 示例卡牌数据
 const EXAMPLE_CARDS = [
@@ -34,12 +35,34 @@ const EXAMPLE_CARDS = [
 ];
 
 export default function HomePage() {
+  const [progress, setProgress] = useState({ unlocked: 0, total: 100, percent: 0 });
+
   useEffect(() => {
     trackPageView('home');
+    setProgress(getUnlockProgress());
   }, []);
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
+      {/* 收藏入口 - 右上角 */}
+      <div className="fixed top-4 right-4 z-50">
+        <Link href="/collection">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border border-gray-100"
+          >
+            <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            <span className="text-sm font-medium text-gray-700">{progress.unlocked}</span>
+            <span className="text-xs text-gray-400">/ {progress.total}</span>
+          </motion.div>
+        </Link>
+      </div>
+
       {/* Hero Section */}
       <section className="flex-1 flex flex-col items-center justify-center px-6 py-16 md:py-24">
         <motion.div
