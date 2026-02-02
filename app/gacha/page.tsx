@@ -38,7 +38,7 @@ export default function GachaPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const createJob = useCallback(async () => {
+  const generateImage = useCallback(async () => {
     const petImage = sessionStorage.getItem('petImage');
     const petType = sessionStorage.getItem('petType') as 'cat' | 'dog' | null;
     const weightsStr = sessionStorage.getItem('weights');
@@ -58,60 +58,65 @@ export default function GachaPage() {
     track(EVENTS.GACHA_START, { petType, weights });
 
     try {
-      // 创建任务
-      console.log('📤 创建生成任务...');
-      const startResponse = await fetch('/api/generate/start', {
+      // 直接调用同步 API（简单模式）
+      console.log('📤 调用生成 API...');
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ petImage, petType, weights }),
       });
 
-      if (!startResponse.ok) {
-        const errorData = await startResponse.json();
-        throw new Error(errorData.error || '创建任务失败');
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '生成失败');
       }
 
-      const startData = await startResponse.json();
-      if (!startData.success || !startData.data?.jobId) {
-        throw new Error(startData.error || '创建任务失败');
-      }
+      console.log('✅ 生成成功:', data.data.title);
 
-      const jobId = startData.data.jobId;
-      console.log('✅ 任务创建成功:', jobId);
+      // 保存结果到 sessionStorage
+      sessionStorage.setItem('gachaResult', JSON.stringify(data.data));
 
-      // 保存任务信息到 sessionStorage
-      sessionStorage.setItem('currentJobId', jobId);
-      sessionStorage.setItem('jobRarity', startData.data.rarity);
-      sessionStorage.setItem('jobTitle', startData.data.title);
-
-      // 立即跳转到结果页面（结果页面会处理 Realtime 监听）
-      router.push(`/result/${jobId}`);
+      // 跳转到结果页面
+      router.push(`/result/${data.data.id}`);
 
     } catch (err) {
-      console.error('创建任务错误:', err);
-      setError(err instanceof Error ? err.message : '创建任务失败，请重试');
-      track(EVENTS.API_GENERATION_FAIL, { error: err instanceof Error ? err.message : 'unknown' });
+      console.error('生成错误:', err);
+      const errorMessage = err instanceof Error ? err.message : '生成失败，请重试';
+      setError(errorMessage);
+      track(EVENTS.API_GENERATION_FAIL, { error: errorMessage });
     }
   }, [router]);
 
   useEffect(() => {
     trackPageView('gacha');
-    createJob();
-  }, [createJob]);
+    generateImage();
+  }, [generateImage]);
 
   if (error) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
         <div className="text-center">
           <div className="text-6xl mb-6">😿</div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">创建失败</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">生成失败</h1>
           <p className="text-gray-500 mb-8">{error}</p>
-          <button
-            onClick={() => router.push('/redeem')}
-            className="px-8 py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
-          >
-            返回重试
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setError(null);
+                generateImage();
+              }}
+              className="w-full px-8 py-3 bg-amber-500 text-white rounded-full font-medium hover:bg-amber-600 transition-colors"
+            >
+              重新生成
+            </button>
+            <button
+              onClick={() => router.push('/redeem')}
+              className="w-full px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-300 transition-colors"
+            >
+              返回
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -150,7 +155,7 @@ export default function GachaPage() {
 
         {/* 标题 */}
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          正在准备抽卡...
+          AI 正在创作中
         </h1>
 
         {/* 滚动字幕 */}
@@ -168,6 +173,11 @@ export default function GachaPage() {
             </motion.p>
           </AnimatePresence>
         </div>
+
+        {/* 提示 */}
+        <p className="text-xs text-gray-400 mt-8">
+          生成需要约 30-60 秒，请耐心等待
+        </p>
       </motion.div>
     </main>
   );

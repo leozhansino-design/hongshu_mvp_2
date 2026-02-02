@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ResultCard } from '@/components/ResultCard';
 import { ShareButton } from '@/components/ShareButton';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
 import { addToCollection, isCollected, getUnlockProgress } from '@/lib/collection';
-import { supabase } from '@/lib/supabase';
 
 interface GachaResult {
   id: string;
@@ -23,286 +22,44 @@ interface GachaResult {
   petType: 'cat' | 'dog';
 }
 
-// 宠物冷知识/趣味等待语
-const PET_FUN_FACTS = [
-  "猫咪每天睡眠时间长达16小时，是名副其实的睡神！",
-  "狗狗的鼻纹就像人类指纹一样独一无二",
-  "猫的呼噜声频率可以促进骨骼愈合",
-  "狗狗能分辨超过250个词汇和手势",
-  "猫咪不能尝出甜味，它们没有甜味受体",
-  "狗的嗅觉比人类灵敏10000-100000倍",
-  "猫咪一生中约70%的时间都在睡觉",
-  "狗狗的听力是人类的4倍",
-  "猫的耳朵有32块肌肉，可以独立旋转180度",
-  "狗狗摇尾巴的方向能表达不同情绪",
-  "猫咪走路时几乎无声，因为它们用脚尖走路",
-  "狗的鼻子湿润是为了更好地吸收气味分子",
-  "猫咪每天花30%的时间梳理毛发",
-  "狗狗做梦时会抽动爪子，可能在梦里奔跑",
-  "猫的心跳速度是人类的两倍",
-  "狗狗可以感知主人的情绪变化",
-  "猫咪有专门的\"喵喵叫\"只对人类使用",
-  "狗的汗腺只在脚掌上",
-  "猫咪的跳跃高度可达自身身高的6倍",
-  "狗狗的忠诚度在动物界名列前茅",
-];
-
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams();
   const [result, setResult] = useState<GachaResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [collected, setCollected] = useState(false);
   const [showCollectTip, setShowCollectTip] = useState(false);
   const [progress, setProgress] = useState({ unlocked: 0, total: 100, percent: 0 });
-  const [currentFact, setCurrentFact] = useState(PET_FUN_FACTS[0]);
-  const [factIndex, setFactIndex] = useState(0);
-  const [loadingProgress, setLoadingProgress] = useState(0);
 
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const edgeFunctionCalledRef = useRef(false);
+  const resultId = params.id as string;
 
-  const jobId = params.id as string;
-
-  // 直接调用 Supabase Edge Function 处理图片生成
-  const triggerEdgeFunction = useCallback(async () => {
-    if (edgeFunctionCalledRef.current) return;
-    edgeFunctionCalledRef.current = true;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase config');
-      return;
-    }
-
-    try {
-      console.log('🚀 前端直接调用 Edge Function:', jobId);
-      // 浏览器没有超时限制，Edge Function 支持 150 秒
-      const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ jobId }),
-      });
-
-      const data = await response.json();
-      console.log('📡 Edge Function 响应:', data);
-      // 无论成功失败，Realtime 或轮询会处理状态更新
-    } catch (err) {
-      console.error('Edge Function 调用失败:', err);
-      // 失败了也没关系，轮询会继续
-    }
-  }, [jobId]);
-
-  // 处理任务完成
-  const handleJobComplete = useCallback((data: {
-    id: string;
-    rarity: Rarity;
-    title_id: number;
-    title: string;
-    description: string;
-    prompt: string;
-    pet_image: string;
-    generated_image: string;
-    pet_type: 'cat' | 'dog';
-  }) => {
-    console.log('✅ 任务完成，展示结果');
-    const resultData: GachaResult = {
-      id: data.id,
-      rarity: data.rarity,
-      titleId: data.title_id,
-      title: data.title,
-      description: data.description,
-      prompt: data.prompt,
-      originalImage: data.pet_image,
-      generatedImage: data.generated_image,
-      petType: data.pet_type,
-    };
-
-    setResult(resultData);
-    setIsLoading(false);
-    setLoadingProgress(100);
-    setCollected(isCollected(resultData.id));
-    setProgress(getUnlockProgress());
-
-    // 保存到 sessionStorage
-    sessionStorage.setItem('gachaResult', JSON.stringify(resultData));
-
-    track(EVENTS.GACHA_RESULT, {
-      rarity: resultData.rarity,
-      titleId: resultData.titleId,
-      title: resultData.title,
-    });
-    track(EVENTS.API_GENERATION_SUCCESS, {
-      rarity: resultData.rarity,
-    });
-  }, []);
-
-  // 处理任务失败
-  const handleJobFailed = useCallback((errorMessage: string) => {
-    console.error('❌ 任务失败:', errorMessage);
-    setError(errorMessage || '生成失败，请重试');
-    setIsLoading(false);
-    track(EVENTS.API_GENERATION_FAIL, { error: errorMessage });
-  }, []);
-
-  // 兜底轮询
-  const pollStatus = useCallback(async () => {
-    if (!jobId) return;
-
-    try {
-      console.log('🔄 轮询检查状态...');
-      const response = await fetch(`/api/generate/status/${jobId}`);
-      const data = await response.json();
-
-      if (data.status === 'completed' && data.data) {
-        handleJobComplete({
-          id: data.data.id,
-          rarity: data.data.rarity,
-          title_id: data.data.titleId,
-          title: data.data.title,
-          description: data.data.description,
-          prompt: data.data.prompt,
-          pet_image: data.data.originalImage,
-          generated_image: data.data.generatedImage,
-          pet_type: data.data.petType,
-        });
-        // 停止轮询
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-      } else if (data.status === 'failed') {
-        handleJobFailed(data.error);
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-      }
-    } catch (err) {
-      console.error('轮询错误:', err);
-    }
-  }, [jobId, handleJobComplete, handleJobFailed]);
-
-  // 初始化 Realtime 订阅
   useEffect(() => {
-    if (!jobId) return;
-
     trackPageView('result');
-    console.log('🔌 初始化 Realtime 订阅:', jobId);
 
-    // 首先检查是否已有结果（从 sessionStorage）
+    // 简单模式：直接从 sessionStorage 加载结果
     const resultStr = sessionStorage.getItem('gachaResult');
     if (resultStr) {
       try {
         const parsedResult = JSON.parse(resultStr) as GachaResult;
-        if (parsedResult.id === jobId && parsedResult.generatedImage) {
-          console.log('📦 从缓存加载结果');
+        if (parsedResult.generatedImage) {
           setResult(parsedResult);
-          setIsLoading(false);
           setCollected(isCollected(parsedResult.id));
           setProgress(getUnlockProgress());
-          return;
+
+          track(EVENTS.GACHA_RESULT, {
+            rarity: parsedResult.rarity,
+            titleId: parsedResult.titleId,
+            title: parsedResult.title,
+          });
+        } else {
+          router.push('/');
         }
-      } catch (e) {
-        console.error('解析缓存失败:', e);
+      } catch {
+        router.push('/');
       }
+    } else {
+      router.push('/');
     }
-
-    // 设置 Realtime 订阅
-    const channel = supabase
-      .channel(`job-${jobId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'generation_jobs',
-          filter: `id=eq.${jobId}`,
-        },
-        (payload) => {
-          console.log('📡 Realtime 收到更新:', payload.new);
-          const newData = payload.new as {
-            status: string;
-            generated_image?: string;
-            error_message?: string;
-            id: string;
-            rarity: Rarity;
-            title_id: number;
-            title: string;
-            description: string;
-            prompt: string;
-            pet_image: string;
-            pet_type: 'cat' | 'dog';
-          };
-
-          if (newData.status === 'completed' && newData.generated_image) {
-            handleJobComplete(newData as Parameters<typeof handleJobComplete>[0]);
-          } else if (newData.status === 'failed') {
-            handleJobFailed(newData.error_message || '生成失败');
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Realtime 订阅状态:', status);
-      });
-
-    channelRef.current = channel;
-
-    // 首次立即检查状态
-    pollStatus();
-
-    // 触发 Edge Function 处理（浏览器没有超时限制）
-    triggerEdgeFunction();
-
-    // 设置兜底轮询（每 10 秒）
-    pollingRef.current = setInterval(pollStatus, 10000);
-
-    return () => {
-      console.log('🔌 清理 Realtime 订阅');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, [jobId, pollStatus, handleJobComplete, handleJobFailed, triggerEdgeFunction]);
-
-  // 趣味内容轮播
-  useEffect(() => {
-    if (!isLoading) return;
-
-    const timer = setInterval(() => {
-      setFactIndex(prev => {
-        const next = (prev + 1) % PET_FUN_FACTS.length;
-        setCurrentFact(PET_FUN_FACTS[next]);
-        return next;
-      });
-    }, 4000);
-
-    return () => clearInterval(timer);
-  }, [isLoading]);
-
-  // 进度条动画
-  useEffect(() => {
-    if (!isLoading) return;
-
-    const timer = setInterval(() => {
-      setLoadingProgress(prev => {
-        if (prev >= 90) return 90;
-        return prev + 0.5;
-      });
-    }, 100);
-
-    return () => clearInterval(timer);
-  }, [isLoading]);
+  }, [resultId, router]);
 
   const handleCollect = () => {
     if (!result || collected) return;
@@ -336,96 +93,7 @@ export default function ResultPage() {
     router.push('/upload');
   };
 
-  // 加载状态
-  if (isLoading) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-8 bg-white">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="w-full max-w-sm text-center"
-        >
-          {/* 动画图标 */}
-          <div className="relative w-32 h-32 mx-auto mb-8">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
-              className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-400 border-r-violet-400"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-              className="absolute inset-4 rounded-full border-4 border-transparent border-b-blue-400 border-l-pink-400"
-            />
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="absolute inset-0 flex items-center justify-center text-5xl"
-            >
-              🎨
-            </motion.div>
-          </div>
-
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            AI 正在创作中
-          </h1>
-          <p className="text-gray-500 mb-6">
-            请耐心等待，马上就好...
-          </p>
-
-          {/* 进度条 */}
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-6">
-            <motion.div
-              className="h-full bg-gradient-to-r from-amber-400 via-violet-400 to-blue-400"
-              initial={{ width: '0%' }}
-              animate={{ width: `${loadingProgress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-
-          {/* 宠物冷知识 */}
-          <div className="bg-amber-50 rounded-2xl p-4 min-h-[100px] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={factIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="text-center"
-              >
-                <p className="text-xs text-amber-600 mb-2">🐾 宠物冷知识</p>
-                <p className="text-amber-800 text-sm leading-relaxed">
-                  {currentFact}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </main>
-    );
-  }
-
-  // 错误状态
-  if (error) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
-        <div className="text-center">
-          <div className="text-6xl mb-6">😿</div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">生成失败</h1>
-          <p className="text-gray-500 mb-8">{error}</p>
-          <button
-            onClick={handleRetry}
-            className="px-8 py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
-          >
-            返回重试
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  // 没有结果
+  // 没有结果时显示加载
   if (!result) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-white">
