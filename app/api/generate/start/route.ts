@@ -10,10 +10,24 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建增强的 prompt
+// 构建增强的 prompt - 强调穿衣服、拟人化、独特风格
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
   const petWord = petType === 'cat' ? 'cat' : 'dog';
-  return `A ${petWord}, ${basePrompt}, maintain the original pet's appearance and features, high quality, detailed`;
+
+  // 风格增强词 - 让图片更有分享欲
+  const styleBoost = [
+    'anthropomorphic character design',
+    'wearing detailed costume and clothing',
+    'standing upright like a human',
+    'expressive face with personality',
+    'viral social media worthy',
+    'trending illustration style',
+    'vibrant colors',
+    'professional concept art',
+    'highly detailed fabric textures',
+  ].join(', ');
+
+  return `An adorable ${petWord} character, ${basePrompt}, IMPORTANT: the ${petWord} MUST be wearing the costume/clothing described, ${styleBoost}, maintain the original pet's fur color and facial features, 8k quality, masterpiece`;
 }
 
 // 调用 Supabase Edge Function 处理图片生成
