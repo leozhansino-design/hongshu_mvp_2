@@ -138,13 +138,22 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId)
 
-    // 准备图片数据 - 直接使用完整的 data:image URL 或 http URL
+    // 准备图片数据 - 可灵需要纯 base64（不带 data:image 前缀）
     let imageData: string
-    if (job.pet_image.startsWith('data:image') || job.pet_image.startsWith('http')) {
-      // 直接使用完整的图片数据（包含 data:image 前缀）
+    if (job.pet_image.startsWith('data:image')) {
+      // 去掉 data:image/xxx;base64, 前缀，只保留纯 base64
+      const commaIndex = job.pet_image.indexOf(',')
+      if (commaIndex !== -1) {
+        imageData = job.pet_image.substring(commaIndex + 1)
+        console.log('📷 图片格式: base64, 长度:', imageData.length)
+      } else {
+        throw new Error('无效的 base64 图片格式')
+      }
+    } else if (job.pet_image.startsWith('http')) {
       imageData = job.pet_image
+      console.log('📷 图片格式: URL')
     } else {
-      throw new Error('无效的图片格式')
+      throw new Error('无效的图片格式，需要 data:image 或 http URL')
     }
 
     // 构建可灵 API 请求 - 竖屏 9:16 (1024×1792)
