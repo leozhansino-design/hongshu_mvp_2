@@ -113,7 +113,8 @@ export default function ResultPage() {
         <ShareButton
           title={result.title}
           rarity={result.rarity}
-          resultId={result.id}
+          image={result.generatedImage}
+          description={result.description}
         />
 
         <motion.button

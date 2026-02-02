@@ -204,10 +204,10 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 24,
     rarity: 'R',
-    title: '精神状态极度稳定',
+    title: '行为艺术家',
     petType: 'universal',
-    prompt: 'A pet in tie-dye colorful clothes, vacant unfocused eyes, riding inflatable unicorn, distorted rainbow background, chaotic energy, detailed',
-    description: '"它疯了，又没完全疯，这种状态在当下被称为"完美"。"'
+    prompt: 'A pet as avant-garde performance artist wearing colorful abstract painted bodysuit, standing in modern art gallery with strange sculptures, artistic and eccentric vibe, detailed',
+    description: '"它的每一个动作都是艺术，包括打翻水杯。"'
   },
   {
     id: 25,
@@ -220,10 +220,10 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 26,
     rarity: 'R',
-    title: '脆皮年轻人代表',
+    title: '中医养生博主',
     petType: 'universal',
-    prompt: 'A pet covered in band-aids and patches, wearing neck pillow, holding thermos cup, traditional Chinese medicine clinic background, fragile but trying, detailed',
-    description: '"跳下沙发都要缓半天，它是懂养生的。"'
+    prompt: 'A pet as traditional Chinese medicine influencer wearing Tang suit, holding goji berry thermos cup, surrounded by herbs and acupuncture charts, traditional pharmacy background, wellness guru vibe, detailed',
+    description: '"枸杞泡啤酒，朋克养生第一人。"'
   },
   {
     id: 27,
@@ -244,10 +244,10 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 29,
     rarity: 'R',
-    title: '刚下飞机·谢绝推销',
+    title: '国际超模',
     petType: 'universal',
-    prompt: 'A pet wearing noise-canceling headphones and sunglasses, pulling silver suitcase, airport terminal background, busy traveler vibe, detailed',
-    description: '"忙着去参加国际猫/狗片节，没时间理你。"'
+    prompt: 'A pet as fashion model wearing designer sunglasses and luxury scarf, walking on airport runway like catwalk, pulling Louis Vuitton suitcase, paparazzi flash lights in background, supermodel vibe, detailed',
+    description: '"时装周刚结束，下一站米兰，没空跟你闲聊。"'
   },
   {
     id: 30,
@@ -260,18 +260,18 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 31,
     rarity: 'R',
-    title: '早八准时崩溃战神',
+    title: '大厂实习生',
     petType: 'universal',
-    prompt: 'A pet with messy hair, grabbing alarm clock, chaotic bedroom background, morning rage expression, relatable vibe, detailed',
-    description: '"每天早上叫醒它的不是梦想，是快憋不住的尿。"'
+    prompt: 'A pet as tech company intern wearing oversized company hoodie, messy bed hair, holding coffee cup, standing at subway station at 7am with exhausted face, corporate slave vibe, detailed',
+    description: '"工资3000，加班到12点，梦想是转正后躺平。"'
   },
   {
     id: 32,
     rarity: 'R',
-    title: '互联网活化石',
+    title: '网吧包夜冠军',
     petType: 'universal',
-    prompt: 'A pet wrapped in old ethernet cables, Windows 95 desktop background with pop-up windows, retro internet vibe, detailed',
-    description: '"它见证了互联网的兴起，现在只想看点修狗视频。"'
+    prompt: 'A pet as internet cafe gamer wearing gaming headset, surrounded by instant noodle cups and energy drink cans, multiple monitors showing game screens, dark internet cafe background with neon lights, detailed',
+    description: '"连续包夜72小时，只为证明谁才是真正的肝帝。"'
   },
   {
     id: 33,
@@ -308,26 +308,26 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 37,
     rarity: 'R',
-    title: '多巴胺穿搭鼻祖',
+    title: '淘宝买家秀模特',
     petType: 'universal',
-    prompt: 'A pet in extremely colorful mismatched outfit, oversized plastic sunglasses, dopamine color wall background, chaotic fashion, detailed',
-    description: '"审美比较超前，领先人类大约五百年。"'
+    prompt: 'A pet modeling cheap colorful clothes with awkward pose, holding price tag showing 9.9 yuan, white backdrop with bad lighting, budget fashion show vibe, detailed',
+    description: '"卖家秀VS买家秀，它就是买家秀本秀。"'
   },
   {
     id: 38,
     rarity: 'R',
-    title: '孤独等级十级学者',
+    title: '一人食餐厅常客',
     petType: 'universal',
-    prompt: 'A pet alone on carousel, holding single balloon, empty amusement park background, melancholic but peaceful, detailed',
-    description: '"它并不孤独，它只是在享受没有你的清静。"'
+    prompt: 'A pet dining alone at hot pot restaurant, surrounded by empty chairs, single portion hot pot and one pair of chopsticks, late night restaurant background, solo diner vibe, detailed',
+    description: '"一个人吃火锅，两个人的量，它说这叫仪式感。"'
   },
   {
     id: 39,
     rarity: 'R',
-    title: '早C晚A实践者',
+    title: '酒吧驻唱歌手',
     petType: 'universal',
-    prompt: 'A pet with coffee cup in left paw and wine glass in right paw, split morning/night background, work-life balance vibe, detailed',
-    description: '"早晨咖啡续命，晚上酒精入眠，生活太难了。"'
+    prompt: 'A pet as bar singer wearing leather jacket, holding microphone on small stage, dim bar lighting with neon signs, jazz club atmosphere, detailed',
+    description: '"白天睡到自然醒，晚上唱到嗓子哑，这就是艺术人生。"'
   },
   {
     id: 40,
@@ -356,18 +356,18 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 43,
     rarity: 'R',
-    title: '深夜EMO领军人',
+    title: '网易云评论区诗人',
     petType: 'universal',
-    prompt: 'A pet sitting by window watching rain, melancholic blue filter, sad aesthetic, emotional night vibe, detailed',
-    description: '"雨下得好大，像它想念罐头的泪水一样大。"'
+    prompt: 'A pet sitting by rainy window wearing earphones, holding phone showing music app, tears streaming down face, blue melancholic lighting, detailed',
+    description: '"生而为猫/狗，我很抱歉。——它的第999条网抑云评论。"'
   },
   {
     id: 44,
     rarity: 'R',
-    title: '社恐星人办事处',
+    title: '居家办公程序员',
     petType: 'universal',
-    prompt: 'A pet hiding behind curtain showing only half face, party silhouettes in background, introvert energy, detailed',
-    description: '"别过来，我们保持灵魂交流就好。"'
+    prompt: 'A pet as remote worker in pajamas sitting at messy desk with multiple monitors, unwashed coffee mugs everywhere, curtains closed, work from home chaos vibe, detailed',
+    description: '"三天没出门，头发油到可以炒菜，但代码跑通了。"'
   },
   {
     id: 45,
@@ -380,10 +380,10 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 46,
     rarity: 'R',
-    title: '甚至想去扫地的僧人',
+    title: '少林寺扫地僧',
     petType: 'universal',
-    prompt: 'A pet holding broom bigger than itself, simple cloth robe, humble temple background, zen minimalist vibe, detailed',
-    description: '"大隐隐于市，小隐隐于沙发底下。"'
+    prompt: 'A pet as Shaolin monk wearing orange kasaya robe, holding bamboo broom, standing in ancient temple courtyard with incense smoke, martial arts master hidden as janitor vibe, detailed',
+    description: '"看似在扫地，实则内力深厚，一扫帚能把你扫出二里地。"'
   },
   {
     id: 47,
@@ -404,18 +404,18 @@ export const TITLES_DATA: TitleData[] = [
   {
     id: 49,
     rarity: 'R',
-    title: '互联网游牧民族',
+    title: '星巴克蹭网专家',
     petType: 'universal',
-    prompt: 'A pet with solar panel on back, holding signal searching pole, digital nomad aesthetic, detailed',
-    description: '"哪里有WiFi，哪里就是它的家。"'
+    prompt: 'A pet sitting in Starbucks with laptop, one small coffee on table for 5 hours, power outlet occupied, professional cafe squatter vibe, detailed',
+    description: '"点一杯最便宜的美式，蹭8小时WiFi和空调，这叫性价比。"'
   },
   {
     id: 50,
     rarity: 'R',
-    title: '草台班子核心成员',
+    title: '婚礼司仪',
     petType: 'universal',
-    prompt: 'A pet in shabby costume, standing on wobbly stage center, amateur theater vibe but dedicated, detailed',
-    description: '"世界是个草台班子，它是那个最敬业的演员。"'
+    prompt: 'A pet as wedding host wearing flashy sequin suit, holding microphone on wedding stage, red carpet and flower arch background, professional MC vibe, detailed',
+    description: '"掌声在哪里！让我们恭喜新郎新娘！它能把任何婚礼变成相声专场。"'
   },
 
   // ==================== N · 纯纯废材 (50个，50%概率) ====================
