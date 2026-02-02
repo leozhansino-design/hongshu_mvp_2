@@ -18,24 +18,24 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建增强的 prompt - 强调穿衣服、拟人化、独特风格
+// 构建增强的 prompt - 真实风格，穿衣服的宠物
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
   const petWord = petType === 'cat' ? 'cat' : 'dog';
 
-  // 风格增强词 - 让图片更有分享欲
+  // 真实风格增强词 - 不要卡通/动画风格
   const styleBoost = [
-    'anthropomorphic character design',
-    'wearing detailed costume and clothing',
-    'standing upright like a human',
-    'expressive face with personality',
-    'viral social media worthy',
-    'trending illustration style',
-    'vibrant colors',
-    'professional concept art',
-    'highly detailed fabric textures',
+    'photorealistic',
+    'realistic fur texture',
+    'the pet MUST be wearing clothes or costume',
+    'detailed fabric and clothing',
+    'studio portrait lighting',
+    'sharp focus on face',
+    'professional photography',
+    'hyperrealistic',
+    '8k ultra detailed',
   ].join(', ');
 
-  return `An adorable ${petWord} character, ${basePrompt}, IMPORTANT: the ${petWord} MUST be wearing the costume/clothing described, ${styleBoost}, maintain the original pet's fur color and facial features, 8k quality, masterpiece`;
+  return `A real ${petWord} portrait, ${basePrompt}, ${styleBoost}, preserve the original pet's unique facial features and fur pattern, NOT cartoon, NOT illustration, NOT anime`;
 }
 
 export async function POST(request: NextRequest) {
