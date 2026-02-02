@@ -16,6 +16,35 @@ function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string
   return `A ${petWord}, ${basePrompt}, maintain the original pet's appearance and features, high quality, detailed`;
 }
 
+// 调用 Supabase Edge Function 处理图片生成
+async function triggerProcessing(jobId: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase config');
+    return;
+  }
+
+  try {
+    // 调用 Supabase Edge Function（不等待响应）
+    fetch(`${supabaseUrl}/functions/v1/generate-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ jobId }),
+    }).catch(err => {
+      console.log('Edge function call initiated (fire and forget):', err?.message || 'unknown');
+    });
+
+    console.log('🚀 已触发 Supabase Edge Function 处理:', jobId);
+  } catch (error) {
+    console.error('触发处理失败:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { petImage, petType, weights }: GenerateRequest = await request.json();
@@ -62,6 +91,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ 任务创建成功:', jobId);
+
+    // 触发 Supabase Edge Function 处理（不等待）
+    triggerProcessing(jobId);
 
     // 立即返回任务ID，让前端开始轮询
     return NextResponse.json({

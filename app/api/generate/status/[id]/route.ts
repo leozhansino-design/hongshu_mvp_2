@@ -3,127 +3,32 @@ import { supabase } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
-// AI 图片生成配置
-const AI_CONFIG = {
-  baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
-  apiKey: process.env.AI_API_KEY || '',
-  model: 'nano-banana-2',
-  endpoint: '/v1/images/generations',
-};
+// 调用 Supabase Edge Function 处理图片生成
+async function triggerProcessing(jobId: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 处理生成任务
-async function processJob(job: {
-  id: string;
-  pet_image: string;
-  pet_type: string;
-  prompt: string;
-  retry_count?: number;
-}) {
-  console.log('🎨 开始处理任务:', job.id);
-
-  // 标记为处理中
-  await supabase
-    .from('generation_jobs')
-    .update({
-      status: 'processing',
-      processing_started_at: new Date().toISOString(),
-    })
-    .eq('id', job.id);
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase config');
+    return;
+  }
 
   try {
-    // 准备图片数据
-    const imageArray: string[] = [];
-    if (job.pet_image.startsWith('data:image')) {
-      const base64Data = job.pet_image.split(',')[1];
-      imageArray.push(base64Data);
-    } else if (job.pet_image.startsWith('http')) {
-      imageArray.push(job.pet_image);
-    }
-
-    if (imageArray.length === 0) {
-      throw new Error('无效的图片格式');
-    }
-
-    const requestBody = {
-      prompt: job.prompt,
-      model: AI_CONFIG.model,
-      response_format: 'url',
-      aspect_ratio: '1:1',
-      image: imageArray,
-    };
-
-    console.log('⏳ 调用 AI API...');
-    const startTime = Date.now();
-
-    // 设置 25 秒超时（Edge Runtime 限制 30 秒，留余量）
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-    const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
+    // 调用 Supabase Edge Function（不等待响应）
+    fetch(`${supabaseUrl}/functions/v1/generate-image`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${AI_CONFIG.apiKey}`,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
+      body: JSON.stringify({ jobId }),
+    }).catch(err => {
+      console.log('Edge function call initiated:', err?.message || 'ok');
     });
 
-    clearTimeout(timeoutId);
-
-    const data = await response.json();
-    console.log('⏱️ API 响应时间:', Date.now() - startTime, 'ms');
-
-    let generatedImageUrl: string | null = null;
-
-    if (data.data && data.data[0] && data.data[0].url) {
-      generatedImageUrl = data.data[0].url;
-    } else if (data.data && data.data[0] && data.data[0].b64_json) {
-      generatedImageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
-    }
-
-    if (generatedImageUrl) {
-      // 更新为完成状态
-      await supabase
-        .from('generation_jobs')
-        .update({
-          status: 'completed',
-          generated_image: generatedImageUrl,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', job.id);
-
-      console.log('✅ 任务完成:', job.id);
-      return { success: true, generatedImage: generatedImageUrl };
-    } else {
-      throw new Error(data.error?.message || 'AI 生成失败');
-    }
+    console.log('🚀 已触发 Supabase Edge Function 处理:', jobId);
   } catch (error) {
-    console.error('❌ 处理失败:', error);
-
-    // 如果是超时错误，恢复为 pending 状态以便重试
-    if (error instanceof Error && error.name === 'AbortError') {
-      await supabase
-        .from('generation_jobs')
-        .update({
-          status: 'pending',
-          retry_count: job.retry_count ? job.retry_count + 1 : 1,
-        })
-        .eq('id', job.id);
-      return { success: false, error: 'timeout', canRetry: true };
-    }
-
-    // 其他错误标记为失败
-    await supabase
-      .from('generation_jobs')
-      .update({
-        status: 'failed',
-        error_message: error instanceof Error ? error.message : '未知错误',
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', job.id);
-
-    return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+    console.error('触发处理失败:', error);
   }
 }
 
@@ -155,15 +60,7 @@ export async function GET(
       );
     }
 
-    // 检查 API Key
-    if (!AI_CONFIG.apiKey) {
-      return NextResponse.json(
-        { success: false, error: 'AI 服务未配置', status: 'failed' },
-        { status: 500 }
-      );
-    }
-
-    // 根据状态处理
+    // 根据状态返回
     switch (job.status) {
       case 'completed':
         return NextResponse.json({
@@ -190,38 +87,23 @@ export async function GET(
         });
 
       case 'processing':
-        // 检查是否卡住了（超过 60 秒）
+        // 检查是否卡住了（超过 120 秒）
         const processingTime = job.processing_started_at
           ? Date.now() - new Date(job.processing_started_at).getTime()
           : 0;
 
-        if (processingTime > 60000) {
-          console.log('⚠️ 任务卡住，重新处理:', jobId);
-          // 重置为 pending 状态
+        if (processingTime > 120000) {
+          console.log('⚠️ 任务可能卡住，重新触发处理:', jobId);
+          // 重置为 pending 并重新触发
           await supabase
             .from('generation_jobs')
-            .update({ status: 'pending' })
+            .update({
+              status: 'pending',
+              retry_count: (job.retry_count || 0) + 1,
+            })
             .eq('id', jobId);
 
-          // 尝试处理
-          const result = await processJob({ ...job, retry_count: job.retry_count });
-          if (result.success) {
-            return NextResponse.json({
-              success: true,
-              status: 'completed',
-              data: {
-                id: job.id,
-                rarity: job.rarity,
-                titleId: job.title_id,
-                title: job.title,
-                description: job.description,
-                prompt: job.prompt,
-                originalImage: job.pet_image,
-                generatedImage: result.generatedImage,
-                petType: job.pet_type,
-              },
-            });
-          }
+          triggerProcessing(jobId);
         }
 
         return NextResponse.json({
@@ -248,38 +130,22 @@ export async function GET(
           });
         }
 
-        // 开始处理
-        const result = await processJob({ ...job, retry_count: job.retry_count });
+        // 如果任务还是 pending，重新触发处理
+        const createdTime = job.created_at
+          ? Date.now() - new Date(job.created_at).getTime()
+          : 0;
 
-        if (result.success) {
-          return NextResponse.json({
-            success: true,
-            status: 'completed',
-            data: {
-              id: job.id,
-              rarity: job.rarity,
-              titleId: job.title_id,
-              title: job.title,
-              description: job.description,
-              prompt: job.prompt,
-              originalImage: job.pet_image,
-              generatedImage: result.generatedImage,
-              petType: job.pet_type,
-            },
-          });
-        } else if (result.canRetry) {
-          return NextResponse.json({
-            success: true,
-            status: 'processing',
-            message: '正在重试...',
-          });
-        } else {
-          return NextResponse.json({
-            success: false,
-            status: 'failed',
-            error: result.error,
-          });
+        // 如果创建超过 5 秒还是 pending，说明初始触发可能失败了
+        if (createdTime > 5000) {
+          console.log('⚠️ 任务仍为 pending，重新触发处理:', jobId);
+          triggerProcessing(jobId);
         }
+
+        return NextResponse.json({
+          success: true,
+          status: 'pending',
+          message: '等待处理...',
+        });
 
       default:
         return NextResponse.json({
