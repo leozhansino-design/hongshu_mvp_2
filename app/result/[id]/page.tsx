@@ -9,6 +9,7 @@ import { ShareButton } from '@/components/ShareButton';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
 import { addToCollection, isCollected, getUnlockProgress } from '@/lib/collection';
+import { playRevealSound, playSuccessSound } from '@/lib/sounds';
 
 // 搞怪字幕列表
 const FUNNY_SUBTITLES = [
@@ -132,6 +133,9 @@ export default function ResultPage() {
         setCollected(isCollected(gachaResult.id));
         setProgress(getUnlockProgress());
 
+        // 播放揭示音效
+        playRevealSound(gachaResult.rarity);
+
         // 保存到 sessionStorage
         sessionStorage.setItem('gachaResult', JSON.stringify(gachaResult));
 
@@ -242,6 +246,7 @@ export default function ResultPage() {
       setCollected(true);
       setProgress(getUnlockProgress());
       setShowCollectTip(true);
+      playSuccessSound(); // 播放收藏成功音效
       setTimeout(() => setShowCollectTip(false), 2000);
       track(EVENTS.SHARE_CLICK, { action: 'collect', rarity: result.rarity, title: result.title });
     }
