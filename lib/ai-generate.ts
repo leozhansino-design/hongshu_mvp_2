@@ -3,7 +3,7 @@
 const AI_CONFIG = {
   baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
   apiKey: process.env.AI_API_KEY || '',
-  model: process.env.AI_MODEL || 'nano-banana-2',
+  model: process.env.AI_MODEL || 'nano-banana',
   endpoint: '/v1/images/generations'
 };
 
