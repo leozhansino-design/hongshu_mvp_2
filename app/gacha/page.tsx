@@ -104,14 +104,14 @@ export default function GachaPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-6">
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
         <div className="text-center">
           <div className="text-6xl mb-6">😿</div>
-          <h1 className="text-2xl font-semibold text-white mb-4">生成失败</h1>
-          <p className="text-zinc-500 mb-8">{error}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">生成失败</h1>
+          <p className="text-gray-500 mb-8">{error}</p>
           <button
             onClick={() => router.push('/redeem')}
-            className="px-8 py-3 bg-white text-black rounded-full font-medium"
+            className="px-8 py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
           >
             返回重试
           </button>
@@ -121,7 +121,7 @@ export default function GachaPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-8">
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-8 bg-white">
       {/* 加载中 */}
       {isLoading && (
         <motion.div
@@ -134,12 +134,12 @@ export default function GachaPage() {
             transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
             className="text-6xl mb-6"
           >
-            🔮
+            ✨
           </motion.div>
-          <h1 className="text-2xl font-semibold text-white mb-2">
-            命运推演中...
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            身份解析中...
           </h1>
-          <p className="text-zinc-500">AI 正在为你的毛孩子生成命运卡牌</p>
+          <p className="text-gray-500">AI 正在揭秘你家毛孩子的真实身份</p>
         </motion.div>
       )}
 
@@ -166,9 +166,9 @@ export default function GachaPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="text-center text-zinc-500 mt-8"
+              className="text-center text-gray-500 mt-8"
             >
-              点击卡牌揭晓命运
+              点击卡牌揭晓身份
             </motion.p>
           )}
         </motion.div>

@@ -31,25 +31,25 @@ export function QuestionCard({
         {/* 进度指示器 */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-zinc-500 text-sm">
+            <span className="text-gray-500 text-sm">
               问题 {questionIndex + 1}/{totalQuestions}
             </span>
-            <span className="text-zinc-600 text-sm">
+            <span className="text-gray-400 text-sm">
               {Math.round(((questionIndex + 1) / totalQuestions) * 100)}%
             </span>
           </div>
-          <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: `${(questionIndex / totalQuestions) * 100}%` }}
               animate={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="h-full bg-white rounded-full"
+              className="h-full bg-gray-900 rounded-full"
             />
           </div>
         </div>
 
         {/* 问题 */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-white text-center mb-10 leading-relaxed">
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-10 leading-relaxed">
           {question.question}
         </h2>
 
@@ -64,8 +64,8 @@ export function QuestionCard({
               className={`
                 w-full p-5 rounded-2xl text-left transition-all duration-300 border-2
                 ${selectedOption === index
-                  ? 'border-white bg-white/10 text-white'
-                  : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
                 }
               `}
             >
@@ -74,8 +74,8 @@ export function QuestionCard({
                   w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium
                   transition-all duration-300
                   ${selectedOption === index
-                    ? 'border-white bg-white text-black'
-                    : 'border-zinc-600'
+                    ? 'border-white bg-white text-gray-900'
+                    : 'border-gray-300'
                   }
                 `}>
                   {String.fromCharCode(65 + index)}

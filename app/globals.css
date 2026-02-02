@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --primary: #ffffff;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --primary: #FF6B35;
   --secondary: #86868b;
 }
 
 body {
-  background: #000000;
+  background: #ffffff;
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   min-height: 100vh;
@@ -20,16 +20,20 @@ body {
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ffd700;
-  border-radius: 4px;
+  background: #ddd;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
 }
 
 /* 动画效果 */
@@ -38,67 +42,72 @@ body {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
-@keyframes glow {
+@keyframes pulse-soft {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+    opacity: 0.7;
   }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
 
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
 }
 
-.animate-shake {
-  animation: shake 0.15s ease-in-out infinite;
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-/* 卡牌样式 */
+/* 卡牌样式 - 白色主题 */
 .card-ssr {
-  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+  box-shadow: 0 8px 32px rgba(255, 165, 0, 0.3);
 }
 
 .card-sr {
-  background: linear-gradient(135deg, #9b59b6 0%, #e91e63 100%);
-  box-shadow: 0 0 25px rgba(155, 89, 182, 0.5);
+  background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+  box-shadow: 0 8px 32px rgba(168, 85, 247, 0.25);
 }
 
 .card-r {
-  background: linear-gradient(135deg, #3498db 0%, #00bcd4 100%);
-  box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+  background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
 }
 
 .card-n {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  box-shadow: 0 0 15px rgba(149, 165, 166, 0.3);
+  background: linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%);
+  box-shadow: 0 8px 32px rgba(156, 163, 175, 0.15);
 }
 
-/* 按钮悬停效果 */
+/* 按钮样式 */
 .btn-primary {
-  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
   transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.35);
 }
 
 /* 3D 透视 */
@@ -108,4 +117,11 @@ body {
 
 .backface-hidden {
   backface-visibility: hidden;
+}
+
+/* 玻璃效果 */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }

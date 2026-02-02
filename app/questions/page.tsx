@@ -82,18 +82,18 @@ export default function QuestionsPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col px-6 py-8">
+    <main className="min-h-screen flex flex-col px-6 py-8 bg-white">
       {/* 顶部导航 */}
       <nav className="flex items-center justify-between mb-8">
         <button
           onClick={goBack}
-          className="text-zinc-500 hover:text-white transition-colors"
+          className="text-gray-400 hover:text-gray-600 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="text-zinc-600 text-sm">步骤 2/3</span>
+        <span className="text-gray-400 text-sm">步骤 2/3</span>
         <div className="w-6" />
       </nav>
 
@@ -104,7 +104,7 @@ export default function QuestionsPage() {
         className="flex justify-center mb-8"
       >
         <div className="relative">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-zinc-700">
+          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
             <img
               src={petImage}
               alt="宠物"
@@ -133,7 +133,7 @@ export default function QuestionsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="text-center text-zinc-700 text-sm mt-8"
+        className="text-center text-gray-400 text-sm mt-8"
       >
         选择答案后自动进入下一题
       </motion.p>

@@ -43,15 +43,15 @@ export default function UploadPage() {
   const canContinue = imagePreview && petType;
 
   return (
-    <main className="min-h-screen flex flex-col px-6 py-8">
+    <main className="min-h-screen flex flex-col px-6 py-8 bg-white">
       {/* 顶部导航 */}
       <nav className="flex items-center justify-between mb-12">
-        <Link href="/" className="text-zinc-500 hover:text-white transition-colors">
+        <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <span className="text-zinc-600 text-sm">步骤 1/3</span>
+        <span className="text-gray-400 text-sm">步骤 1/3</span>
         <div className="w-6" />
       </nav>
 
@@ -63,10 +63,10 @@ export default function UploadPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <h1 className="text-3xl md:text-4xl font-semibold text-white mb-3">
+          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-3">
             上传照片
           </h1>
-          <p className="text-zinc-500">
+          <p className="text-gray-500">
             选择一张你家毛孩子的照片
           </p>
         </motion.div>
@@ -91,15 +91,15 @@ export default function UploadPage() {
           transition={{ delay: 0.2 }}
           className="mb-10"
         >
-          <p className="text-center text-zinc-500 mb-4">选择宠物类型</p>
+          <p className="text-center text-gray-500 mb-4">选择宠物类型</p>
           <div className="flex justify-center gap-4">
             <button
               onClick={() => setPetType('cat')}
               className={`
                 flex items-center gap-3 px-8 py-4 rounded-2xl border-2 transition-all duration-300
                 ${petType === 'cat'
-                  ? 'border-white bg-white/10 text-white'
-                  : 'border-zinc-800 text-zinc-500 hover:border-zinc-600'
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
                 }
               `}
             >
@@ -111,8 +111,8 @@ export default function UploadPage() {
               className={`
                 flex items-center gap-3 px-8 py-4 rounded-2xl border-2 transition-all duration-300
                 ${petType === 'dog'
-                  ? 'border-white bg-white/10 text-white'
-                  : 'border-zinc-800 text-zinc-500 hover:border-zinc-600'
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
                 }
               `}
             >
@@ -135,8 +135,8 @@ export default function UploadPage() {
             className={`
               w-full py-4 rounded-full font-medium text-lg transition-all duration-300
               ${canContinue
-                ? 'bg-white text-black hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]'
-                : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }
             `}
           >

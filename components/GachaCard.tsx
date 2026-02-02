@@ -100,7 +100,7 @@ export function GachaCard({
       >
         {/* 卡牌背面 */}
         <div
-          className="absolute inset-0 rounded-3xl flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700"
+          className="absolute inset-0 rounded-3xl flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 shadow-lg"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <div className="text-center">
@@ -109,10 +109,10 @@ export function GachaCard({
               transition={{ repeat: Infinity, duration: 2 }}
               className="text-6xl mb-4"
             >
-              🔮
+              ✨
             </motion.div>
-            <p className="text-white text-lg font-medium">命运揭晓中...</p>
-            <p className="text-zinc-500 text-sm mt-2">点击卡牌翻转</p>
+            <p className="text-gray-900 text-lg font-medium">身份揭晓中...</p>
+            <p className="text-gray-500 text-sm mt-2">点击卡牌翻转</p>
           </div>
         </div>
 
@@ -129,7 +129,7 @@ export function GachaCard({
             <img
               src={resultImage}
               className="w-full h-full object-cover"
-              alt="命运卡牌"
+              alt="身份卡牌"
             />
             {/* 渐变遮罩 */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
