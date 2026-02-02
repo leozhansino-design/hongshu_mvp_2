@@ -21,8 +21,12 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let jobId: string | null = null
+  let supabase: ReturnType<typeof createClient> | null = null
+
   try {
-    const { jobId } = await req.json()
+    const body = await req.json()
+    jobId = body.jobId
 
     if (!jobId) {
       return new Response(
@@ -36,7 +40,7 @@ Deno.serve(async (req) => {
     // 创建 Supabase 客户端
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    supabase = createClient(supabaseUrl, supabaseKey)
 
     // 获取任务信息
     const { data: job, error: fetchError } = await supabase
@@ -53,30 +57,62 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 检查状态
+    // 检查状态 - 已完成直接返回
     if (job.status === 'completed') {
+      console.log('✅ 任务已完成:', jobId)
       return new Response(
         JSON.stringify({ success: true, status: 'completed' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // 检查状态 - 已失败直接返回
+    if (job.status === 'failed') {
+      console.log('❌ 任务已失败:', jobId)
+      return new Response(
+        JSON.stringify({ success: false, status: 'failed', error: job.error_message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 检查是否正在处理中（防止重复处理）
     if (job.status === 'processing') {
-      // 检查是否卡住（超过 120 秒）
       const processingTime = job.processing_started_at
         ? Date.now() - new Date(job.processing_started_at).getTime()
         : 0
 
+      // 如果处理时间不超过 120 秒，认为正在正常处理
       if (processingTime < 120000) {
+        console.log('⏳ 任务正在处理中:', jobId, '已用时:', Math.round(processingTime / 1000), '秒')
         return new Response(
           JSON.stringify({ success: true, status: 'processing' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
-      // 如果卡住了，继续处理
+      // 超过 120 秒，认为卡住了，继续处理
+      console.log('⚠️ 任务可能卡住，重新处理:', jobId)
+    }
+
+    // 检查重试次数
+    if (job.retry_count && job.retry_count >= 5) {
+      console.error('❌ 重试次数过多:', jobId)
+      await supabase
+        .from('generation_jobs')
+        .update({
+          status: 'failed',
+          error_message: '重试次数过多，请重新生成',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', jobId)
+
+      return new Response(
+        JSON.stringify({ success: false, status: 'failed', error: '重试次数过多' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // 标记为处理中
+    console.log('📝 标记为处理中:', jobId)
     await supabase
       .from('generation_jobs')
       .update({
@@ -106,7 +142,7 @@ Deno.serve(async (req) => {
       image: imageArray,
     }
 
-    console.log('⏳ 调用 AI API...')
+    console.log('⏳ 调用 AI API...', 'prompt:', job.prompt.substring(0, 50) + '...')
     const startTime = Date.now()
 
     // 调用 AI API（Supabase Edge Function 支持最长 150 秒）
@@ -119,8 +155,16 @@ Deno.serve(async (req) => {
       body: JSON.stringify(requestBody),
     })
 
+    const responseTime = Date.now() - startTime
+    console.log('⏱️ AI API 响应时间:', responseTime, 'ms')
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ AI API 错误:', response.status, errorText)
+      throw new Error(`AI API 错误: ${response.status}`)
+    }
+
     const data = await response.json()
-    console.log('⏱️ API 响应时间:', Date.now() - startTime, 'ms')
 
     let generatedImageUrl: string | null = null
 
@@ -132,7 +176,8 @@ Deno.serve(async (req) => {
 
     if (generatedImageUrl) {
       // 更新为完成状态
-      await supabase
+      console.log('📝 更新为完成状态:', jobId)
+      const { error: updateError } = await supabase
         .from('generation_jobs')
         .update({
           status: 'completed',
@@ -141,33 +186,59 @@ Deno.serve(async (req) => {
         })
         .eq('id', jobId)
 
-      console.log('✅ 任务完成:', jobId)
+      if (updateError) {
+        console.error('❌ 更新状态失败:', updateError)
+        throw new Error('更新状态失败')
+      }
+
+      console.log('✅ 任务完成:', jobId, '用时:', responseTime, 'ms')
       return new Response(
         JSON.stringify({ success: true, status: 'completed' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } else {
-      throw new Error(data.error?.message || 'AI 生成失败')
+      console.error('❌ AI 返回数据异常:', JSON.stringify(data))
+      throw new Error(data.error?.message || 'AI 生成失败，返回数据异常')
     }
   } catch (error) {
     console.error('❌ 处理失败:', error)
 
-    // 尝试更新状态为失败
-    try {
-      const { jobId } = await req.clone().json()
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      const supabase = createClient(supabaseUrl, supabaseKey)
+    // 更新状态为 pending 以便重试（而不是直接失败）
+    if (jobId && supabase) {
+      try {
+        // 获取当前 retry_count
+        const { data: currentJob } = await supabase
+          .from('generation_jobs')
+          .select('retry_count')
+          .eq('id', jobId)
+          .single()
 
-      await supabase
-        .from('generation_jobs')
-        .update({
-          status: 'pending', // 重置为 pending 以便重试
-          retry_count: supabase.rpc('increment_retry', { job_id: jobId }),
-        })
-        .eq('id', jobId)
-    } catch (e) {
-      console.error('更新状态失败:', e)
+        const newRetryCount = (currentJob?.retry_count || 0) + 1
+
+        if (newRetryCount >= 5) {
+          // 重试次数过多，标记为失败
+          await supabase
+            .from('generation_jobs')
+            .update({
+              status: 'failed',
+              error_message: error.message || '处理失败',
+              completed_at: new Date().toISOString(),
+            })
+            .eq('id', jobId)
+        } else {
+          // 重置为 pending，增加重试次数
+          await supabase
+            .from('generation_jobs')
+            .update({
+              status: 'pending',
+              retry_count: newRetryCount,
+            })
+            .eq('id', jobId)
+          console.log('📝 重置为 pending，等待重试，当前重试次数:', newRetryCount)
+        }
+      } catch (e) {
+        console.error('❌ 更新状态失败:', e)
+      }
     }
 
     return new Response(
