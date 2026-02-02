@@ -162,9 +162,10 @@ Deno.serve(async (req) => {
       throw new Error('无效的图片格式')
     }
 
-    // 2. 构建 MJ prompt（图片 URL + 描述）
-    // MJ 格式: 图片URL 描述文字 --参数
-    const mjPrompt = `${imageUrl} ${job.prompt} --ar 9:16 --v 6.1 --s 750`
+    // 2. 构建 MJ prompt - 使用 --cref 来保留宠物外观
+    // --cref: Character Reference，让 MJ 保留参考图片中角色的外观
+    // --cw 100: Character Weight 设为最大，强力保留角色特征
+    const mjPrompt = `${job.prompt} --cref ${imageUrl} --cw 100 --ar 9:16 --v 6.1 --s 750`
     console.log('📝 MJ Prompt:', mjPrompt.substring(0, 200) + '...')
 
     // 3. 提交 MJ imagine 任务
