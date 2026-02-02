@@ -7,8 +7,8 @@ const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
   model: 'kling-v2',
-  // 使用单图 image2image 端点而不是 multi-image2image
-  submitEndpoint: '/kling/v1/images/image2image',
+  // 正确的可灵图片生成端点
+  submitEndpoint: '/kling/v1/images/generations',
   queryEndpoint: '/kling/v1/images/generations',
 }
 

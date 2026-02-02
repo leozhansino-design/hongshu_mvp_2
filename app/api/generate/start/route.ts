@@ -11,56 +11,67 @@ interface GenerateRequest {
 }
 
 // 构建中文 prompt - 可灵模型使用中文效果更好
-// 包含头衔信息，生成符合头衔身份的图片
+// 生成符合头衔的拟人化宠物形象
 function buildEnhancedPrompt(title: string, description: string, petType: 'cat' | 'dog'): string {
-  const petWord = petType === 'cat' ? '猫咪' : '狗狗';
+  const petWord = petType === 'cat' ? '猫' : '狗';
 
-  // 从头衔提取关键特征
-  const titleKeywords = extractTitleKeywords(title);
+  // 获取职业/身份描述
+  const identityInfo = getIdentityDescription(title, petType);
 
   // 中文风格增强词
-  const styleBoost = [
-    '超高清写实风格',
-    '穿着精致服装',
-    '专业摄影棚灯光',
-    '面部特写清晰',
-    '毛发质感逼真',
-    '8K超高清画质',
-  ].join('，');
+  const styleBoost = '超高清写实摄影风格，专业摄影棚灯光，毛发质感逼真，8K画质';
 
-  return `一只${petWord}的写真照片，身份是「${title}」，${titleKeywords}，${styleBoost}，保留原本宠物的毛色和面部特征`;
+  return `一只${identityInfo.identity}${petWord}，${identityInfo.appearance}，${styleBoost}，保留原本宠物的毛色和面部特征`;
 }
 
-// 根据头衔提取关键描述词
-function extractTitleKeywords(title: string): string {
-  // 根据不同头衔类型返回对应的视觉描述
-  const titleMappings: { [key: string]: string } = {
-    '量子神猫': '穿着星光斗篷，神秘的眼神，周围有宇宙星辰',
-    '寂灭恐惧战神': '穿着黑色机甲盔甲，威风凛凛，周围有闪电',
-    '数字生命0号实验体': '穿着赛博朋克风格服装，身上有发光电路',
-    '万界唯一纯爱战士': '穿着白色骑士盔甲，手持粉色水晶心',
-    '赛博佛祖·机械降神': '穿着金色袈裟，身后有齿轮状光环',
-    '黑帮教父': '穿着黑色条纹西装，戴墨镜，叼着雪茄',
-    '华尔街金牌交易员': '穿着蓝色衬衫，戴金边眼镜，看着股票图表',
-    '皇家大公爵': '戴着红宝石王冠，穿着红色天鹅绒斗篷',
-    '米其林三星主厨': '戴着高高的厨师帽，穿着白色厨师服',
-    '优雅永不过时': '戴着珍珠项链，穿着蕾丝披肩',
-    '超市扫货王': '推着满满的购物车，穿着购物达人T恤',
-    '办公室摸鱼冠军': '穿着休闲办公装，躺在办公椅上',
-    '深夜食堂常客': '围着围裙，在深夜小店里吃面',
-    '公园遛弯达人': '穿着运动服，戴着遮阳帽',
-    '朋友圈点赞狂魔': '拿着手机，疯狂点赞',
+// 根据头衔获取身份和外观描述
+function getIdentityDescription(title: string, petType: 'cat' | 'dog'): { identity: string; appearance: string } {
+  const petWord = petType === 'cat' ? '猫' : '狗';
+
+  // 头衔到身份的映射 - 使用更自然的职业/身份描述
+  const identityMappings: { [key: string]: { identity: string; appearance: string } } = {
+    // SSR
+    '量子神猫': { identity: '神秘的星际旅行者', appearance: '穿着星光斗篷，眼睛闪烁着宇宙星辰的光芒' },
+    '寂灭恐惧战神': { identity: '末日战士', appearance: '穿着黑色科幻机甲，周围电闪雷鸣' },
+    '数字生命0号实验体': { identity: '赛博朋克黑客', appearance: '穿着霓虹灯光的科技外套，身上有发光电路纹路' },
+    '万界唯一纯爱战士': { identity: '纯爱骑士', appearance: '穿着洁白的骑士盔甲，手持粉红水晶心' },
+    '赛博佛祖': { identity: '机械禅师', appearance: '穿着金色电子袈裟，身后有巨大齿轮光环' },
+    '机械降神': { identity: '机械禅师', appearance: '穿着金色电子袈裟，身后有巨大齿轮光环' },
+    // SR
+    '黑帮教父': { identity: '黑道大佬', appearance: '穿着黑色条纹西装，戴墨镜叼雪茄，坐在皮椅上' },
+    '华尔街': { identity: '华尔街精英', appearance: '穿着高级蓝色衬衫，戴金丝眼镜，面前是股票曲线' },
+    '皇家': { identity: '皇室贵族', appearance: '头戴镶红宝石王冠，身披红色天鹅绒斗篷' },
+    '大公爵': { identity: '皇室贵族', appearance: '头戴镶红宝石王冠，身披红色天鹅绒斗篷' },
+    '米其林': { identity: '米其林大厨', appearance: '戴高高的白色厨师帽，穿白色厨师服，手持金色锅铲' },
+    '主厨': { identity: '米其林大厨', appearance: '戴高高的白色厨师帽，穿白色厨师服，手持金色锅铲' },
+    '优雅': { identity: '名媛贵妇', appearance: '戴着珍珠项链，穿着蕾丝礼服，优雅端庄' },
+    // R
+    '超市': { identity: '购物狂', appearance: '推着堆满商品的购物车，穿着休闲T恤' },
+    '扫货': { identity: '购物狂', appearance: '推着堆满商品的购物车，穿着休闲T恤' },
+    '摸鱼': { identity: '摸鱼达人', appearance: '穿着宽松卫衣，躺在办公椅上打哈欠' },
+    '办公室': { identity: '办公室白领', appearance: '穿着休闲商务装，坐在办公桌前' },
+    '深夜食堂': { identity: '深夜食客', appearance: '围着围裙坐在居酒屋吧台，面前是一碗热腾腾的拉面' },
+    '公园': { identity: '退休老干部', appearance: '穿着运动服戴遮阳帽，在公园长椅上晒太阳' },
+    '遛弯': { identity: '退休老干部', appearance: '穿着运动服戴遮阳帽，在公园长椅上晒太阳' },
+    '点赞': { identity: '网络冲浪达人', appearance: '拿着手机疯狂刷屏，表情专注' },
+    // N
+    '野猫': { identity: '流浪艺术家', appearance: '穿着破旧但有艺术感的衣服，眼神桀骜不驯' },
+    '屌丝': { identity: '屌丝宅男', appearance: '穿着皱巴巴的格子衬衫，戴着厚眼镜' },
+    '打不过': { identity: '弱鸡废柴', appearance: '穿着普通T恤，一脸无奈的表情' },
+    '蟑螂': { identity: '弱鸡废柴', appearance: '穿着普通T恤，一脸无奈的表情' },
+    '普通': { identity: '普通市民', appearance: '穿着简单朴素的日常服装' },
+    '平凡': { identity: '平凡打工人', appearance: '穿着朴素的工装，表情疲惫但坚韧' },
   };
 
   // 尝试匹配头衔关键词
-  for (const [key, value] of Object.entries(titleMappings)) {
+  for (const [key, value] of Object.entries(identityMappings)) {
     if (title.includes(key)) {
       return value;
     }
   }
 
-  // 默认描述
-  return '穿着时尚服装，气质独特';
+  // 默认描述 - 根据稀有度猜测
+  return { identity: '时尚达人', appearance: '穿着潮流服饰，气质出众' };
 }
 
 // 调用 Supabase Edge Function 处理图片生成
