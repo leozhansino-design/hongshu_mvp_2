@@ -95,15 +95,36 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId)
 
-    // 准备图片数据
-    let imageData = job.pet_image
-    if (imageData.startsWith('data:image')) {
-      // 已经是 base64 格式，保持原样
-      imageData = job.pet_image
-    }
-
+    // 准备图片数据 - 转换 base64 为 Blob
     console.log('📝 Prompt:', job.prompt.substring(0, 100) + '...')
     console.log('🤖 模型:', AI_CONFIG.model)
+
+    let imageBlob: Blob
+    if (job.pet_image.startsWith('data:image')) {
+      // 解析 data URL
+      const [header, base64Data] = job.pet_image.split(',')
+      const mimeMatch = header.match(/data:([^;]+)/)
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png'
+
+      // base64 转 Blob
+      const binaryString = atob(base64Data)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      imageBlob = new Blob([bytes], { type: mimeType })
+      console.log('📷 图片大小:', Math.round(imageBlob.size / 1024), 'KB')
+    } else {
+      throw new Error('需要 base64 格式的图片')
+    }
+
+    // 构建 multipart form data
+    const formData = new FormData()
+    formData.append('model', AI_CONFIG.model)
+    formData.append('prompt', job.prompt)
+    formData.append('n', '1')
+    formData.append('size', '768x1024')
+    formData.append('image', imageBlob, 'pet.png')
 
     // 调用 AI API 生成图片
     const apiUrl = `${AI_CONFIG.baseUrl}/v1/images/edits`
@@ -113,15 +134,9 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
-        'Content-Type': 'application/json',
+        // 不设置 Content-Type，让 fetch 自动设置 multipart boundary
       },
-      body: JSON.stringify({
-        model: AI_CONFIG.model,
-        image: imageData,
-        prompt: job.prompt,
-        n: 1,
-        size: '768x1024',  // 竖版图片
-      }),
+      body: formData,
     })
 
     const responseText = await response.text()
