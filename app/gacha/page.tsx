@@ -26,6 +26,47 @@ export default function GachaPage() {
   const [result, setResult] = useState<GachaResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [loadingText, setLoadingText] = useState('AI 正在揭秘你家毛孩子的真实身份');
+
+  // 轮询任务状态
+  const pollTaskStatus = useCallback(async (taskId: string): Promise<GachaResult | null> => {
+    const maxAttempts = 60; // 最多轮询 60 次（约 2 分钟）
+    const pollInterval = 2000; // 每 2 秒轮询一次
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await fetch(`/api/generate?taskId=${taskId}`);
+        const data = await response.json();
+
+        console.log(`轮询 #${attempt + 1}:`, data.status);
+
+        if (data.status === 'completed' && data.data) {
+          return data.data as GachaResult;
+        }
+
+        if (data.status === 'failed') {
+          throw new Error(data.error || '生成失败');
+        }
+
+        // 更新加载提示
+        if (attempt > 5) {
+          setLoadingText('AI 正在精心创作中，请稍候...');
+        }
+        if (attempt > 15) {
+          setLoadingText('即将完成，马上揭晓...');
+        }
+
+        // 等待后继续轮询
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      } catch (err) {
+        console.error('轮询错误:', err);
+        throw err;
+      }
+    }
+
+    throw new Error('生成超时，请重试');
+  }, []);
+
   const generateResult = useCallback(async () => {
     const petImage = sessionStorage.getItem('petImage');
     const petType = sessionStorage.getItem('petType') as 'cat' | 'dog' | null;
@@ -47,6 +88,7 @@ export default function GachaPage() {
     track(EVENTS.GACHA_START, { petType, weights });
 
     try {
+      // 第一步：创建任务
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,29 +97,35 @@ export default function GachaPage() {
 
       const data = await response.json();
 
-      if (data.success) {
-        setResult(data.data);
+      if (!data.success || !data.taskId) {
+        throw new Error(data.error || '创建任务失败');
+      }
+
+      console.log('任务已创建:', data.taskId);
+
+      // 第二步：轮询等待结果
+      const result = await pollTaskStatus(data.taskId);
+
+      if (result) {
+        setResult(result);
         track(EVENTS.GACHA_RESULT, {
-          rarity: data.data.rarity,
-          titleId: data.data.titleId,
-          title: data.data.title,
+          rarity: result.rarity,
+          titleId: result.titleId,
+          title: result.title,
         });
         track(EVENTS.API_GENERATION_SUCCESS, {
-          rarity: data.data.rarity,
-          prompt: data.data.prompt,
+          rarity: result.rarity,
+          prompt: result.prompt,
         });
-      } else {
-        setError(data.error || '生成失败');
-        track(EVENTS.API_GENERATION_FAIL, { error: data.error });
       }
     } catch (err) {
       console.error('生成错误:', err);
-      setError('网络错误，请重试');
-      track(EVENTS.API_GENERATION_FAIL, { error: 'network_error' });
+      setError(err instanceof Error ? err.message : '网络错误，请重试');
+      track(EVENTS.API_GENERATION_FAIL, { error: String(err) });
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [router, pollTaskStatus]);
 
   useEffect(() => {
     trackPageView('gacha');
@@ -139,7 +187,7 @@ export default function GachaPage() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">
             身份解析中...
           </h1>
-          <p className="text-gray-500">AI 正在揭秘你家毛孩子的真实身份</p>
+          <p className="text-gray-500">{loadingText}</p>
         </motion.div>
       )}
 
