@@ -1,17 +1,72 @@
-// Supabase Edge Function: 处理 AI 图片生成 (nano-banana-2-2k)
-// 部署方法见 README
+// Supabase Edge Function: 处理 AI 图片生成
+// 支持多模型备选：2k -> 4k -> 普通版
+// 部署: supabase functions deploy generate-image
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
-  model: 'nano-banana-2-2k',  // 2k 版本应该更快
+  // 模型优先级：2k最快 -> 4k质量更好 -> 普通版最稳定
+  models: ['nano-banana-2-2k', 'nano-banana-2-4k', 'nano-banana-2'],
 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// 尝试使用指定模型生成图片
+async function tryGenerateWithModel(
+  model: string,
+  imageBlob: Blob,
+  prompt: string
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  console.log(`🤖 尝试模型: ${model}`)
+
+  const formData = new FormData()
+  formData.append('model', model)
+  formData.append('prompt', prompt)
+  formData.append('n', '1')
+  formData.append('size', '768x1024')
+  formData.append('image', imageBlob, 'pet.png')
+
+  const apiUrl = `${AI_CONFIG.baseUrl}/v1/images/edits`
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
+      },
+      body: formData,
+    })
+
+    const responseText = await response.text()
+    console.log(`📦 ${model} 响应状态:`, response.status)
+
+    if (!response.ok) {
+      console.log(`❌ ${model} 失败:`, responseText.substring(0, 200))
+      return { success: false, error: `${model} 失败: ${response.status}` }
+    }
+
+    const data = JSON.parse(responseText)
+
+    if (data.data && data.data[0]) {
+      if (data.data[0].url) {
+        console.log(`✅ ${model} 成功`)
+        return { success: true, imageUrl: data.data[0].url }
+      } else if (data.data[0].b64_json) {
+        console.log(`✅ ${model} 成功 (base64)`)
+        return { success: true, imageUrl: `data:image/png;base64,${data.data[0].b64_json}` }
+      }
+    }
+
+    return { success: false, error: '未获取到图片' }
+  } catch (e) {
+    console.error(`❌ ${model} 异常:`, e)
+    return { success: false, error: e.message || '请求异常' }
+  }
 }
 
 Deno.serve(async (req) => {
@@ -97,16 +152,13 @@ Deno.serve(async (req) => {
 
     // 准备图片数据 - 转换 base64 为 Blob
     console.log('📝 Prompt:', job.prompt.substring(0, 100) + '...')
-    console.log('🤖 模型:', AI_CONFIG.model)
 
     let imageBlob: Blob
     if (job.pet_image.startsWith('data:image')) {
-      // 解析 data URL
       const [header, base64Data] = job.pet_image.split(',')
       const mimeMatch = header.match(/data:([^;]+)/)
       const mimeType = mimeMatch ? mimeMatch[1] : 'image/png'
 
-      // base64 转 Blob
       const binaryString = atob(base64Data)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {
@@ -118,50 +170,21 @@ Deno.serve(async (req) => {
       throw new Error('需要 base64 格式的图片')
     }
 
-    // 构建 multipart form data
-    const formData = new FormData()
-    formData.append('model', AI_CONFIG.model)
-    formData.append('prompt', job.prompt)
-    formData.append('n', '1')
-    formData.append('size', '768x1024')
-    formData.append('image', imageBlob, 'pet.png')
-
-    // 调用 AI API 生成图片
-    const apiUrl = `${AI_CONFIG.baseUrl}/v1/images/edits`
-    console.log('🚀 调用 API:', apiUrl)
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
-        // 不设置 Content-Type，让 fetch 自动设置 multipart boundary
-      },
-      body: formData,
-    })
-
-    const responseText = await response.text()
-    console.log('📦 API 响应状态:', response.status)
-    console.log('📦 API 响应:', responseText.substring(0, 500))
-
-    if (!response.ok) {
-      throw new Error(`API 错误 ${response.status}: ${responseText}`)
-    }
-
-    const data = JSON.parse(responseText)
-
-    // 获取生成的图片
+    // 依次尝试各模型
     let generatedImage: string | null = null
+    let lastError = ''
 
-    if (data.data && data.data[0]) {
-      if (data.data[0].url) {
-        generatedImage = data.data[0].url
-      } else if (data.data[0].b64_json) {
-        generatedImage = `data:image/png;base64,${data.data[0].b64_json}`
+    for (const model of AI_CONFIG.models) {
+      const result = await tryGenerateWithModel(model, imageBlob, job.prompt)
+      if (result.success && result.imageUrl) {
+        generatedImage = result.imageUrl
+        break
       }
+      lastError = result.error || '未知错误'
     }
 
     if (!generatedImage) {
-      throw new Error('未获取到生成的图片')
+      throw new Error(`所有模型均失败: ${lastError}`)
     }
 
     console.log('✅ 图片生成成功')

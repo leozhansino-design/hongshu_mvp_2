@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Rarity } from '@/lib/titles';
 
@@ -9,6 +10,14 @@ interface ResultCardProps {
   description: string;
   image: string;
 }
+
+// 稀有度中文名称
+const RARITY_NAMES = {
+  SSR: '传说',
+  SR: '史诗',
+  R: '稀有',
+  N: '普通',
+};
 
 const RARITY_CONFIG = {
   SSR: {
@@ -55,18 +64,21 @@ const RARITY_CONFIG = {
 
 export function ResultCard({ rarity, title, description, image }: ResultCardProps) {
   const config = RARITY_CONFIG[rarity];
+  const rarityName = RARITY_NAMES[rarity];
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <div className="relative pt-5">
-      {/* 稀有度标签 - 在卡片边框上方 */}
+      {/* 稀有度标签 - 在卡片边框上方，显示中文 */}
       <motion.div
         initial={{ opacity: 0, scale: 0, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         className="absolute top-0 left-1/2 -translate-x-1/2 z-20"
       >
-        <div className={`px-6 py-2 rounded-full ${config.badgeBg} text-white font-bold tracking-wide shadow-lg`}>
-          <span className="text-sm">{rarity}</span>
+        <div className={`px-5 py-2 rounded-full ${config.badgeBg} text-white font-bold tracking-wide shadow-lg`}>
+          <span className="text-sm">{rarityName}</span>
         </div>
       </motion.div>
 
@@ -74,43 +86,62 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className={`relative w-full max-w-xs sm:max-w-sm mx-auto aspect-[3/4] rounded-3xl overflow-hidden ${config.glow}`}
+        className={`relative w-full max-w-xs sm:max-w-sm mx-auto rounded-3xl overflow-hidden ${config.glow}`}
       >
         {/* 渐变边框 */}
-        <div className={`absolute inset-0 rounded-3xl ${config.borderGradient} p-[3px]`}>
-          <div className="w-full h-full rounded-3xl bg-gray-900 overflow-hidden">
-            {/* 背景图 - 无滤镜 */}
-            <img
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
+        <div className={`${config.borderGradient} p-[3px] rounded-3xl`}>
+          <div className="bg-gray-900 rounded-3xl overflow-hidden">
+            {/* 图片容器 */}
+            <div className="relative aspect-[3/4]">
+              {/* 加载中/错误状态 */}
+              {!imageLoaded && !imageError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                  <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-white rounded-full" />
+                </div>
+              )}
 
-        {/* 底部信息区域 - 更小更精简 */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-          {/* 毛玻璃背景 */}
-          <div className="absolute inset-0 backdrop-blur-md bg-black/60 rounded-t-xl" />
+              {imageError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                  <p className="text-white/60 text-sm">图片加载失败</p>
+                </div>
+              )}
 
-          {/* 内容 */}
-          <div className="relative text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className={`text-xl sm:text-2xl font-bold ${config.textColor} ${config.textGlow} mb-1`}
-            >
-              {title}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-white/70 text-xs sm:text-sm leading-relaxed"
-            >
-              "{description}"
-            </motion.p>
+              {/* 背景图 */}
+              <img
+                src={image}
+                alt={title}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+                crossOrigin="anonymous"
+              />
+
+              {/* 底部信息区域 */}
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                {/* 毛玻璃背景 */}
+                <div className="absolute inset-0 backdrop-blur-md bg-black/60" />
+
+                {/* 内容 */}
+                <div className="relative text-center">
+                  <motion.h1
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className={`text-xl sm:text-2xl font-bold ${config.textColor} ${config.textGlow} mb-1`}
+                  >
+                    {title}
+                  </motion.h1>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-white/80 text-xs sm:text-sm leading-relaxed"
+                  >
+                    "{description}"
+                  </motion.p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -118,17 +149,17 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
         {config.sparkle && (
           <>
             <motion.div
-              className="absolute top-10 left-8 w-2 h-2 bg-white rounded-full"
+              className="absolute top-16 left-8 w-2 h-2 bg-white rounded-full pointer-events-none"
               animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
               transition={{ duration: 2, repeat: Infinity, delay: 0 }}
             />
             <motion.div
-              className="absolute top-20 right-10 w-1.5 h-1.5 bg-white rounded-full"
+              className="absolute top-24 right-10 w-1.5 h-1.5 bg-white rounded-full pointer-events-none"
               animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
               transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
             />
             <motion.div
-              className="absolute top-32 left-12 w-1 h-1 bg-white rounded-full"
+              className="absolute top-36 left-12 w-1 h-1 bg-white rounded-full pointer-events-none"
               animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
               transition={{ duration: 1.8, repeat: Infinity, delay: 1 }}
             />
@@ -138,7 +169,7 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
         {/* 扫光动画 - 高稀有度专属 */}
         {(rarity === 'SSR' || rarity === 'SR') && (
           <motion.div
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl"
             initial={{ x: '-100%' }}
             animate={{ x: '200%' }}
             transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}

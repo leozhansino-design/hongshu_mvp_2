@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// 管理员卡密 - 用于测试，无限使用
+const ADMIN_CDKEY = 'DIANZI123';
+
 export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json();
@@ -14,6 +17,19 @@ export async function POST(request: NextRequest) {
 
     const upperCode = code.toUpperCase().trim();
     console.log('🔑 验证卡密:', upperCode);
+
+    // 管理员卡密 - 始终有效
+    if (upperCode === ADMIN_CDKEY) {
+      console.log('✅ 管理员卡密验证成功');
+      return NextResponse.json({
+        success: true,
+        data: {
+          code: ADMIN_CDKEY,
+          type: 'admin',
+          remainingUses: 999,
+        },
+      });
+    }
 
     // 从 Supabase 查询卡密
     const { data: cdkey, error: queryError } = await supabase
