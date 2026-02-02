@@ -66,9 +66,24 @@ export default function GachaPage() {
         body: JSON.stringify({ petImage, petType, weights }),
       });
 
+      // 先检查状态码，504 超时返回的不是 JSON
+      if (response.status === 504) {
+        throw new Error('AI 服务响应超时，请重试');
+      }
+
+      if (!response.ok) {
+        // 尝试解析错误信息
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '生成失败');
+        } catch {
+          throw new Error('生成失败，请重试');
+        }
+      }
+
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error || '生成失败');
       }
 
