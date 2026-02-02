@@ -1,22 +1,18 @@
-// Supabase Edge Function: 处理 AI 图片生成 (Midjourney)
+// Supabase Edge Function: 处理 AI 图片生成 (nano-banana-2-2k)
 // 部署方法见 README
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const MJ_CONFIG = {
+const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
-  submitEndpoint: '/mj/submit/imagine',
-  uploadEndpoint: '/mj/submit/upload-discord-images',
-  fetchEndpoint: '/mj/task/{id}/fetch',
+  model: 'nano-banana-2-2k',  // 2k 版本应该更快
 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,35 +69,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 正在处理中 - 查询 MJ 任务状态
-    if (job.status === 'processing' && job.mj_task_id) {
-      console.log('⏳ 查询 MJ 任务状态:', job.mj_task_id)
-      const result = await pollMjTask(job.mj_task_id)
-
-      if (result.success && result.imageUrl) {
-        await supabase
-          .from('generation_jobs')
-          .update({
-            status: 'completed',
-            generated_image: result.imageUrl,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', jobId)
-
-        return new Response(
-          JSON.stringify({ success: true, status: 'completed' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      } else if (result.status === 'processing') {
-        return new Response(
-          JSON.stringify({ success: true, status: 'processing', message: '正在生成中...' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      } else if (result.failed) {
-        throw new Error(result.error || 'MJ 生成失败')
-      }
-    }
-
     // 检查重试次数
     if (job.retry_count && job.retry_count >= 3) {
       await supabase
@@ -128,101 +95,76 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId)
 
-    // 1. 上传图片到 Discord 获取 URL
-    console.log('📤 上传图片到 MJ...')
-    let imageUrl: string
-
-    if (job.pet_image.startsWith('data:image')) {
-      // 提取 base64 数据
-      const base64Data = job.pet_image.split(',')[1]
-
-      const uploadResponse = await fetch(`${MJ_CONFIG.baseUrl}${MJ_CONFIG.uploadEndpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${MJ_CONFIG.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          base64: base64Data,
-        }),
-      })
-
-      const uploadData = await uploadResponse.json()
-      console.log('📦 上传响应:', JSON.stringify(uploadData))
-
-      if (!uploadData.result || uploadData.code !== 1) {
-        throw new Error(uploadData.description || '图片上传失败')
-      }
-
-      imageUrl = uploadData.result
-      console.log('✅ 图片上传成功:', imageUrl)
-    } else if (job.pet_image.startsWith('http')) {
-      imageUrl = job.pet_image
-    } else {
-      throw new Error('无效的图片格式')
+    // 准备图片数据
+    let imageData = job.pet_image
+    if (imageData.startsWith('data:image')) {
+      // 已经是 base64 格式，保持原样
+      imageData = job.pet_image
     }
 
-    // 2. 构建 MJ prompt - 使用 --cref 来保留宠物外观
-    // --cref: Character Reference，让 MJ 保留参考图片中角色的外观
-    // --cw 100: Character Weight 设为最大，强力保留角色特征
-    const mjPrompt = `${job.prompt} --cref ${imageUrl} --cw 100 --ar 9:16 --v 6.1 --s 750`
-    console.log('📝 MJ Prompt:', mjPrompt.substring(0, 200) + '...')
+    console.log('📝 Prompt:', job.prompt.substring(0, 100) + '...')
+    console.log('🤖 模型:', AI_CONFIG.model)
 
-    // 3. 提交 MJ imagine 任务
-    const submitResponse = await fetch(`${MJ_CONFIG.baseUrl}${MJ_CONFIG.submitEndpoint}`, {
+    // 调用 AI API 生成图片
+    const apiUrl = `${AI_CONFIG.baseUrl}/v1/images/edits`
+    console.log('🚀 调用 API:', apiUrl)
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MJ_CONFIG.apiKey}`,
+        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: mjPrompt,
-        botType: 'MID_JOURNEY',  // 使用 MJ bot
+        model: AI_CONFIG.model,
+        image: imageData,
+        prompt: job.prompt,
+        n: 1,
+        size: '768x1024',  // 竖版图片
       }),
     })
 
-    const submitData = await submitResponse.json()
-    console.log('📦 MJ 提交响应:', JSON.stringify(submitData))
+    const responseText = await response.text()
+    console.log('📦 API 响应状态:', response.status)
+    console.log('📦 API 响应:', responseText.substring(0, 500))
 
-    if (!submitData.result || submitData.code !== 1) {
-      throw new Error(submitData.description || '提交 MJ 任务失败')
+    if (!response.ok) {
+      throw new Error(`API 错误 ${response.status}: ${responseText}`)
     }
 
-    const mjTaskId = submitData.result
-    console.log('✅ MJ 任务已提交:', mjTaskId)
+    const data = JSON.parse(responseText)
 
-    // 保存 mj_task_id
+    // 获取生成的图片
+    let generatedImage: string | null = null
+
+    if (data.data && data.data[0]) {
+      if (data.data[0].url) {
+        generatedImage = data.data[0].url
+      } else if (data.data[0].b64_json) {
+        generatedImage = `data:image/png;base64,${data.data[0].b64_json}`
+      }
+    }
+
+    if (!generatedImage) {
+      throw new Error('未获取到生成的图片')
+    }
+
+    console.log('✅ 图片生成成功')
+
+    // 更新任务状态
     await supabase
       .from('generation_jobs')
-      .update({ mj_task_id: mjTaskId })
+      .update({
+        status: 'completed',
+        generated_image: generatedImage,
+        completed_at: new Date().toISOString(),
+      })
       .eq('id', jobId)
 
-    // 4. 轮询等待结果（最多 120 秒）
-    const result = await pollMjTask(mjTaskId, 120000)
-
-    if (result.success && result.imageUrl) {
-      await supabase
-        .from('generation_jobs')
-        .update({
-          status: 'completed',
-          generated_image: result.imageUrl,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', jobId)
-
-      console.log('✅ 任务完成:', jobId)
-      return new Response(
-        JSON.stringify({ success: true, status: 'completed' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    } else if (result.status === 'processing') {
-      return new Response(
-        JSON.stringify({ success: true, status: 'processing', message: '正在生成中...' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    } else {
-      throw new Error(result.error || 'MJ 生成失败')
-    }
+    return new Response(
+      JSON.stringify({ success: true, status: 'completed' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
     console.error('❌ 处理失败:', error)
@@ -266,58 +208,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
-// 轮询 MJ 任务状态
-async function pollMjTask(taskId: string, maxWaitMs = 120000): Promise<{
-  success: boolean;
-  imageUrl?: string;
-  status?: string;
-  failed?: boolean;
-  error?: string;
-}> {
-  const startTime = Date.now()
-  const pollInterval = 5000  // 每 5 秒查询一次
-
-  while (Date.now() - startTime < maxWaitMs) {
-    try {
-      const fetchUrl = `${MJ_CONFIG.baseUrl}${MJ_CONFIG.fetchEndpoint.replace('{id}', taskId)}`
-      console.log('🔍 查询 MJ 任务:', taskId)
-
-      const response = await fetch(fetchUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${MJ_CONFIG.apiKey}`,
-        },
-      })
-
-      const data = await response.json()
-      console.log('📦 MJ 查询响应:', data.status, data.progress || '')
-
-      const status = data.status
-
-      if (status === 'SUCCESS') {
-        // 成功，获取图片 - MJ 返回的是 4 宫格，我们取第一张或 imageUrl
-        const imageUrl = data.imageUrl
-        if (imageUrl) {
-          console.log('✅ MJ 生成成功:', imageUrl)
-          return { success: true, imageUrl }
-        }
-        return { success: false, failed: true, error: '未获取到图片' }
-      } else if (status === 'FAILURE' || status === 'FAILED') {
-        const errorMsg = data.failReason || '生成失败'
-        console.error('❌ MJ 生成失败:', errorMsg)
-        return { success: false, failed: true, error: errorMsg }
-      } else {
-        // 还在处理中 (SUBMITTED / IN_PROGRESS / PENDING 等)
-        console.log('⏳ MJ 任务状态:', status, 'progress:', data.progress || '0%')
-      }
-    } catch (e) {
-      console.error('❌ 查询出错:', e)
-    }
-
-    await delay(pollInterval)
-  }
-
-  console.log('⏰ 轮询超时，任务可能还在处理')
-  return { success: false, status: 'processing' }
-}
