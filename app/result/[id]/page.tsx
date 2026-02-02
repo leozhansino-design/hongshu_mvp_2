@@ -1,14 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ResultCard } from '@/components/ResultCard';
 import { ShareButton } from '@/components/ShareButton';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
 import { addToCollection, isCollected, getUnlockProgress } from '@/lib/collection';
+
+// 搞怪字幕列表
+const FUNNY_SUBTITLES = [
+  "正在分析您家主子的眼神杀伤力...",
+  "AI正在被您的宠物萌到宕机...",
+  "正在翻译喵星语/汪星语...",
+  "检测到高浓度可爱因子，处理中...",
+  "您的宠物档案已被银河联邦调阅...",
+  "正在计算它每天到底睡了多少小时...",
+  "分析毛发中隐藏的贵族血统...",
+  "扫描中...发现它偷吃零食的证据...",
+  "正在破解它发呆时在想什么...",
+  "检测到作精体质，正在量化等级...",
+];
 
 interface GachaResult {
   id: string;
@@ -29,37 +43,187 @@ export default function ResultPage() {
   const [collected, setCollected] = useState(false);
   const [showCollectTip, setShowCollectTip] = useState(false);
   const [progress, setProgress] = useState({ unlocked: 0, total: 100, percent: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState('正在生成...');
+  const [error, setError] = useState<string | null>(null);
+  const [currentSubtitle, setCurrentSubtitle] = useState(FUNNY_SUBTITLES[0]);
+  const [subtitleIndex, setSubtitleIndex] = useState(0);
 
   const resultId = params.id as string;
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const edgeFunctionCalledRef = useRef(false);
+
+  // 字幕滚动
+  useEffect(() => {
+    if (!isLoading) return;
+    const timer = setInterval(() => {
+      setSubtitleIndex(prev => {
+        const next = (prev + 1) % FUNNY_SUBTITLES.length;
+        setCurrentSubtitle(FUNNY_SUBTITLES[next]);
+        return next;
+      });
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
+
+  // 调用 Supabase Edge Function（从浏览器直接调用，无超时限制）
+  const callEdgeFunction = useCallback(async (jobId: string) => {
+    if (edgeFunctionCalledRef.current) return;
+    edgeFunctionCalledRef.current = true;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase config');
+      return;
+    }
+
+    try {
+      console.log('🚀 从浏览器调用 Edge Function...');
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId }),
+      });
+
+      const data = await response.json();
+      console.log('📦 Edge Function 响应:', data);
+
+      if (data.success && data.status === 'completed') {
+        console.log('✅ Edge Function 处理完成');
+      }
+    } catch (err) {
+      console.error('Edge Function 调用失败:', err);
+      // 重置标志，允许重试
+      edgeFunctionCalledRef.current = false;
+    }
+  }, []);
+
+  // 轮询任务状态
+  const pollStatus = useCallback(async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/generate/status/${jobId}`);
+      const data = await response.json();
+
+      console.log('📊 轮询状态:', data);
+
+      if (data.status === 'completed' && data.data) {
+        // 生成完成
+        console.log('✅ 生成完成!');
+        setIsLoading(false);
+
+        const gachaResult: GachaResult = {
+          id: data.data.id,
+          rarity: data.data.rarity,
+          titleId: data.data.titleId,
+          title: data.data.title,
+          description: data.data.description,
+          prompt: data.data.prompt,
+          originalImage: data.data.originalImage,
+          generatedImage: data.data.generatedImage,
+          petType: data.data.petType,
+        };
+
+        setResult(gachaResult);
+        setCollected(isCollected(gachaResult.id));
+        setProgress(getUnlockProgress());
+
+        // 保存到 sessionStorage
+        sessionStorage.setItem('gachaResult', JSON.stringify(gachaResult));
+
+        track(EVENTS.GACHA_RESULT, {
+          rarity: gachaResult.rarity,
+          titleId: gachaResult.titleId,
+          title: gachaResult.title,
+        });
+
+        // 停止轮询
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      } else if (data.status === 'failed') {
+        // 生成失败
+        console.error('❌ 生成失败:', data.error);
+        setError(data.error || '生成失败，请重试');
+        setIsLoading(false);
+
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      } else if (data.status === 'processing') {
+        setLoadingStatus('AI 正在创作中...');
+      } else if (data.status === 'pending') {
+        setLoadingStatus('等待处理...');
+        // 如果仍在 pending，尝试再次调用 Edge Function
+        edgeFunctionCalledRef.current = false;
+        callEdgeFunction(jobId);
+      }
+    } catch (err) {
+      console.error('轮询失败:', err);
+    }
+  }, [callEdgeFunction]);
 
   useEffect(() => {
     trackPageView('result');
 
-    // 简单模式：直接从 sessionStorage 加载结果
+    // 先检查是否已有结果
     const resultStr = sessionStorage.getItem('gachaResult');
     if (resultStr) {
       try {
         const parsedResult = JSON.parse(resultStr) as GachaResult;
-        if (parsedResult.generatedImage) {
+        if (parsedResult.generatedImage && parsedResult.id === resultId) {
           setResult(parsedResult);
           setCollected(isCollected(parsedResult.id));
           setProgress(getUnlockProgress());
+          setIsLoading(false);
 
           track(EVENTS.GACHA_RESULT, {
             rarity: parsedResult.rarity,
             titleId: parsedResult.titleId,
             title: parsedResult.title,
           });
-        } else {
-          router.push('/');
+          return;
         }
       } catch {
-        router.push('/');
+        // 忽略解析错误
       }
-    } else {
-      router.push('/');
     }
-  }, [resultId, router]);
+
+    // 检查是否有任务ID
+    const jobId = sessionStorage.getItem('currentJobId');
+    if (!jobId || jobId !== resultId) {
+      router.push('/');
+      return;
+    }
+
+    // 开始轮询
+    console.log('🔄 开始轮询任务状态:', jobId);
+
+    // 立即调用一次 Edge Function（从浏览器直接调用）
+    callEdgeFunction(jobId);
+
+    // 立即轮询一次
+    pollStatus(jobId);
+
+    // 设置轮询间隔（每 3 秒）
+    pollingRef.current = setInterval(() => {
+      pollStatus(jobId);
+    }, 3000);
+
+    // 清理
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [resultId, router, pollStatus, callEdgeFunction]);
 
   const handleCollect = () => {
     if (!result || collected) return;
@@ -93,11 +257,106 @@ export default function ResultPage() {
     router.push('/upload');
   };
 
-  // 没有结果时显示加载
-  if (!result) {
+  const handleRetryFromError = () => {
+    setError(null);
+    setIsLoading(true);
+    edgeFunctionCalledRef.current = false;
+    const jobId = sessionStorage.getItem('currentJobId');
+    if (jobId) {
+      callEdgeFunction(jobId);
+      pollStatus(jobId);
+      pollingRef.current = setInterval(() => {
+        pollStatus(jobId);
+      }, 3000);
+    }
+  };
+
+  // 错误状态
+  if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-pulse-soft text-4xl">✨</div>
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
+        <div className="text-center">
+          <div className="text-6xl mb-6">😿</div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">生成失败</h1>
+          <p className="text-gray-500 mb-8">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={handleRetryFromError}
+              className="w-full px-8 py-3 bg-amber-500 text-white rounded-full font-medium hover:bg-amber-600 transition-colors"
+            >
+              重新生成
+            </button>
+            <button
+              onClick={() => router.push('/upload')}
+              className="w-full px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-300 transition-colors"
+            >
+              返回
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // 加载状态
+  if (isLoading || !result) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-8 bg-white">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="w-full max-w-sm text-center"
+        >
+          {/* 动画图标 */}
+          <div className="relative w-32 h-32 mx-auto mb-8">
+            {/* 外圈旋转 */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-400 border-r-violet-400"
+            />
+            {/* 内圈反向旋转 */}
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+              className="absolute inset-4 rounded-full border-4 border-transparent border-b-blue-400 border-l-pink-400"
+            />
+            {/* 中心图标 */}
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="absolute inset-0 flex items-center justify-center text-5xl"
+            >
+              ✨
+            </motion.div>
+          </div>
+
+          {/* 标题 */}
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            {loadingStatus}
+          </h1>
+
+          {/* 滚动字幕 */}
+          <div className="h-12 overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={subtitleIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="text-gray-500 text-sm"
+              >
+                {currentSubtitle}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+
+          {/* 提示 */}
+          <p className="text-xs text-gray-400 mt-8">
+            生成需要约 30-60 秒，请耐心等待
+          </p>
+        </motion.div>
       </main>
     );
   }

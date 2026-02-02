@@ -58,26 +58,20 @@ export default function GachaPage() {
     track(EVENTS.GACHA_START, { petType, weights });
 
     try {
-      // 直接调用同步 API（简单模式）
-      console.log('📤 调用生成 API...');
-      const response = await fetch('/api/generate', {
+      // 使用异步模式：创建任务然后跳转到结果页轮询
+      console.log('📤 创建生成任务...');
+      const response = await fetch('/api/generate/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ petImage, petType, weights }),
       });
 
-      // 先检查状态码，504 超时返回的不是 JSON
-      if (response.status === 504) {
-        throw new Error('AI 服务响应超时，请重试');
-      }
-
       if (!response.ok) {
-        // 尝试解析错误信息
         const text = await response.text();
         console.error('API 错误响应:', response.status, text);
         try {
           const errorData = JSON.parse(text);
-          throw new Error(errorData.error || `生成失败 (${response.status})`);
+          throw new Error(errorData.error || `创建任务失败 (${response.status})`);
         } catch (e) {
           if (e instanceof SyntaxError) {
             throw new Error(`服务错误 (${response.status})`);
@@ -89,16 +83,16 @@ export default function GachaPage() {
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.error || '生成失败');
+        throw new Error(data.error || '创建任务失败');
       }
 
-      console.log('✅ 生成成功:', data.data.title);
+      console.log('✅ 任务创建成功:', data.data.jobId);
 
-      // 保存结果到 sessionStorage
-      sessionStorage.setItem('gachaResult', JSON.stringify(data.data));
+      // 保存任务ID到 sessionStorage
+      sessionStorage.setItem('currentJobId', data.data.jobId);
 
-      // 跳转到结果页面
-      router.push(`/result/${data.data.id}`);
+      // 跳转到结果页面（结果页面会轮询状态）
+      router.push(`/result/${data.data.jobId}`);
 
     } catch (err) {
       console.error('生成错误:', err);
