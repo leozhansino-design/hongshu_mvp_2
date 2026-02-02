@@ -130,12 +130,19 @@ export default function UploadPage() {
           className="mt-auto"
         >
           <button
+            type="button"
             onClick={handleContinue}
+            onTouchEnd={(e) => {
+              if (canContinue) {
+                e.preventDefault();
+                handleContinue();
+              }
+            }}
             disabled={!canContinue}
             className={`
-              w-full py-4 rounded-full font-medium text-lg transition-all duration-300
+              w-full py-4 rounded-full font-medium text-lg transition-all duration-300 select-none
               ${canContinue
-                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                ? 'bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-700'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }
             `}
