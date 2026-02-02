@@ -8,6 +8,7 @@ import { ResultCard } from '@/components/ResultCard';
 import { ShareButton } from '@/components/ShareButton';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
+import { addToCollection, isCollected, getUnlockProgress } from '@/lib/collection';
 
 interface GachaResult {
   id: string;
@@ -25,6 +26,9 @@ export default function ResultPage() {
   const router = useRouter();
   const params = useParams();
   const [result, setResult] = useState<GachaResult | null>(null);
+  const [collected, setCollected] = useState(false);
+  const [showCollectTip, setShowCollectTip] = useState(false);
+  const [progress, setProgress] = useState({ unlocked: 0, total: 100, percent: 0 });
 
   useEffect(() => {
     trackPageView('result');
@@ -46,12 +50,37 @@ export default function ResultPage() {
     }
 
     setResult(parsedResult);
+    setCollected(isCollected(parsedResult.id));
+    setProgress(getUnlockProgress());
+
     track(EVENTS.RESULT_VIEW, {
       rarity: parsedResult.rarity,
       titleId: parsedResult.titleId,
       title: parsedResult.title,
     });
   }, [params.id, router]);
+
+  const handleCollect = () => {
+    if (!result || collected) return;
+
+    const success = addToCollection({
+      id: result.id,
+      titleId: result.titleId,
+      title: result.title,
+      rarity: result.rarity,
+      description: result.description,
+      image: result.generatedImage,
+      petType: result.petType,
+    });
+
+    if (success) {
+      setCollected(true);
+      setProgress(getUnlockProgress());
+      setShowCollectTip(true);
+      setTimeout(() => setShowCollectTip(false), 2000);
+      track(EVENTS.SHARE_CLICK, { action: 'collect', rarity: result.rarity, title: result.title });
+    }
+  };
 
   const handleRetry = () => {
     track(EVENTS.RETRY_CLICK);
@@ -81,7 +110,11 @@ export default function ResultPage() {
           </svg>
         </Link>
         <span className="text-gray-400 text-sm">揭秘完成</span>
-        <div className="w-6" />
+        <Link href="/collection" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </Link>
       </nav>
 
       {/* 结果标题 */}
@@ -110,10 +143,58 @@ export default function ResultPage() {
 
       {/* 底部按钮 */}
       <div className="max-w-sm mx-auto w-full space-y-3">
+        {/* 收藏按钮 */}
+        <div className="flex gap-3">
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCollect}
+            disabled={collected}
+            className={`flex-1 py-4 rounded-full font-medium text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+              collected
+                ? 'bg-amber-100 text-amber-600 border-2 border-amber-200'
+                : 'bg-amber-500 text-white hover:bg-amber-600'
+            }`}
+          >
+            {collected ? (
+              <>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+                <span>已收藏</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>收藏</span>
+              </>
+            )}
+          </motion.button>
+
+          {/* 查看收藏进度 */}
+          <Link href="/collection">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="py-4 px-4 rounded-full bg-gray-100 text-gray-700 font-medium flex items-center gap-2"
+            >
+              <span className="text-lg">{progress.unlocked}</span>
+              <span className="text-xs text-gray-400">/{progress.total}</span>
+            </motion.div>
+          </Link>
+        </div>
+
         <ShareButton
           title={result.title}
           rarity={result.rarity}
-          resultId={result.id}
+          image={result.generatedImage}
+          description={result.description}
         />
 
         <motion.button
@@ -128,6 +209,18 @@ export default function ResultPage() {
           再测一次
         </motion.button>
       </div>
+
+      {/* 收藏成功提示 */}
+      {showCollectTip && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg"
+        >
+          已加入收藏！解锁进度 {progress.unlocked}/{progress.total}
+        </motion.div>
+      )}
 
       {/* 底部提示 */}
       <motion.p

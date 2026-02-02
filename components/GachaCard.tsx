@@ -20,24 +20,28 @@ const RARITY_CONFIG = {
     glow: 'shadow-[0_0_80px_rgba(251,191,36,0.5)]',
     textColor: 'text-amber-400',
     bgGlow: 'rgba(251,191,36,0.3)',
+    percent: '5%',
   },
   SR: {
     gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
     glow: 'shadow-[0_0_60px_rgba(139,92,246,0.4)]',
     textColor: 'text-violet-400',
     bgGlow: 'rgba(139,92,246,0.25)',
+    percent: '15%',
   },
   R: {
     gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
     glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]',
     textColor: 'text-blue-400',
     bgGlow: 'rgba(59,130,246,0.2)',
+    percent: '30%',
   },
   N: {
     gradient: 'from-zinc-400 via-zinc-500 to-zinc-600',
     glow: 'shadow-[0_0_30px_rgba(161,161,170,0.2)]',
     textColor: 'text-zinc-400',
     bgGlow: 'rgba(161,161,170,0.1)',
+    percent: '50%',
   },
 };
 
@@ -138,9 +142,10 @@ export function GachaCard({
           {/* 稀有度标签 */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2">
             <div
-              className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${config.gradient} text-white text-sm font-bold tracking-wide`}
+              className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${config.gradient} text-white text-sm font-bold tracking-wide flex items-center gap-1.5`}
             >
-              {rarity}
+              <span>{rarity}</span>
+              <span className="text-xs font-normal opacity-80">{config.percent}</span>
             </div>
           </div>
 
