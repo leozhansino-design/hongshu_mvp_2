@@ -8,7 +8,7 @@ export const runtime = 'edge';
 const AI_CONFIG = {
   baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
   apiKey: process.env.AI_API_KEY || '',
-  model: 'nano-banana-2',
+  model: 'sora_image-vip',
   endpoint: '/v1/images/generations',
 };
 
@@ -18,10 +18,22 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建增强的 prompt
+// 构建中文 prompt - 可灵模型使用中文效果更好
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
-  const petWord = petType === 'cat' ? 'cat' : 'dog';
-  return `A ${petWord}, ${basePrompt}, maintain the original pet's appearance and features, high quality, detailed`;
+  const petWord = petType === 'cat' ? '猫咪' : '狗狗';
+
+  // 中文风格增强词
+  const styleBoost = [
+    '超高清写实风格',
+    '必须穿着服装',
+    '精致的服装细节',
+    '专业摄影棚灯光',
+    '面部特写清晰',
+    '毛发质感逼真',
+    '8K超高清画质',
+  ].join('，');
+
+  return `一只可爱的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
 }
 
 export async function POST(request: NextRequest) {

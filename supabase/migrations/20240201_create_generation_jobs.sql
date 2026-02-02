@@ -31,6 +31,9 @@ CREATE POLICY "Allow insert for all" ON generation_jobs FOR INSERT TO anon WITH 
 CREATE POLICY "Allow select for all" ON generation_jobs FOR SELECT TO anon USING (true);
 CREATE POLICY "Allow update for all" ON generation_jobs FOR UPDATE TO anon USING (true);
 
+-- 启用 Realtime（关键！用于前端实时监听状态更新）
+ALTER PUBLICATION supabase_realtime ADD TABLE generation_jobs;
+
 -- 自动清理30天前的记录（可选）
 -- 需要先启用 pg_cron 扩展
 -- SELECT cron.schedule('cleanup-old-jobs', '0 0 * * *', $$DELETE FROM generation_jobs WHERE created_at < NOW() - INTERVAL '30 days'$$);

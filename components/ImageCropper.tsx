@@ -131,23 +131,39 @@ export function ImageCropper({
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      // 计算裁剪区域
-      const displayScale = containerSize / Math.min(imageSize.width, imageSize.height);
-      const scaledWidth = imageSize.width * displayScale * scale;
-      const scaledHeight = imageSize.height * displayScale * scale;
+      // object-cover 的逻辑：图片填满容器，保持比例，居中裁剪
+      const imgAspect = img.width / img.height;
+      const containerAspect = 1; // 容器是正方形
 
-      // 裁剪框在容器中心
-      const cropCenterX = containerSize / 2;
-      const cropCenterY = containerSize / 2;
+      let drawWidth: number, drawHeight: number, offsetX: number, offsetY: number;
 
-      // 图片中心相对于裁剪框的偏移
-      const imgCenterX = containerSize / 2 + position.x;
-      const imgCenterY = containerSize / 2 + position.y;
+      if (imgAspect > containerAspect) {
+        // 图片更宽，高度填满
+        drawHeight = containerSize;
+        drawWidth = containerSize * imgAspect;
+        offsetX = (containerSize - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        // 图片更高，宽度填满
+        drawWidth = containerSize;
+        drawHeight = containerSize / imgAspect;
+        offsetX = 0;
+        offsetY = (containerSize - drawHeight) / 2;
+      }
 
-      // 裁剪框左上角在图片上的位置
-      const srcX = ((cropCenterX - imgCenterX) / scaledWidth + 0.5) * img.width;
-      const srcY = ((cropCenterY - imgCenterY) / scaledHeight + 0.5) * img.height;
-      const srcSize = (containerSize * 0.7) / scaledWidth * img.width;
+      // 应用缩放
+      drawWidth *= scale;
+      drawHeight *= scale;
+
+      // 应用位置偏移（包含用户拖动的位置）
+      const finalOffsetX = offsetX * scale + position.x + (containerSize - containerSize * scale) / 2;
+      const finalOffsetY = offsetY * scale + position.y + (containerSize - containerSize * scale) / 2;
+
+      // 计算源图像上的裁剪区域
+      const srcX = (-finalOffsetX / drawWidth) * img.width;
+      const srcY = (-finalOffsetY / drawHeight) * img.height;
+      const srcWidth = (containerSize / drawWidth) * img.width;
+      const srcHeight = (containerSize / drawHeight) * img.height;
 
       // 圆形裁剪
       if (shape === 'circle') {
@@ -164,7 +180,7 @@ export function ImageCropper({
         ctx.clip();
       }
 
-      ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
+      ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, 0, 0, size, size);
 
       // 添加装饰
       if (shape === 'circle') {

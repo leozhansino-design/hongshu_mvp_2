@@ -10,10 +10,51 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建增强的 prompt
+// 构建中文 prompt - 可灵模型使用中文效果更好
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
-  const petWord = petType === 'cat' ? 'cat' : 'dog';
-  return `A ${petWord}, ${basePrompt}, maintain the original pet's appearance and features, high quality, detailed`;
+  const petWord = petType === 'cat' ? '猫咪' : '狗狗';
+
+  // 中文风格增强词
+  const styleBoost = [
+    '超高清写实风格',
+    '必须穿着服装',
+    '精致的服装细节',
+    '专业摄影棚灯光',
+    '面部特写清晰',
+    '毛发质感逼真',
+    '8K超高清画质',
+  ].join('，');
+
+  return `一只可爱的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
+}
+
+// 调用 Supabase Edge Function 处理图片生成
+async function triggerProcessing(jobId: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase config');
+    return;
+  }
+
+  try {
+    // 调用 Supabase Edge Function（不等待响应）
+    fetch(`${supabaseUrl}/functions/v1/generate-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ jobId }),
+    }).catch(err => {
+      console.log('Edge function call initiated (fire and forget):', err?.message || 'unknown');
+    });
+
+    console.log('🚀 已触发 Supabase Edge Function 处理:', jobId);
+  } catch (error) {
+    console.error('触发处理失败:', error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -33,6 +74,8 @@ export async function POST(request: NextRequest) {
     const enhancedPrompt = buildEnhancedPrompt(titleData.prompt, petType);
 
     console.log('🎲 稀有度:', rarity, '称号:', titleData.title);
+    console.log('📝 原始 Prompt:', titleData.prompt);
+    console.log('🎨 完整 Prompt:', enhancedPrompt);
 
     // 生成任务ID
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -63,6 +106,9 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 任务创建成功:', jobId);
 
+    // 触发 Supabase Edge Function 处理（不等待）
+    triggerProcessing(jobId);
+
     // 立即返回任务ID，让前端开始轮询
     return NextResponse.json({
       success: true,
@@ -70,6 +116,7 @@ export async function POST(request: NextRequest) {
         jobId,
         rarity,
         title: titleData.title,
+        prompt: enhancedPrompt,  // 返回完整 prompt 方便调试
       },
     });
   } catch (error) {
