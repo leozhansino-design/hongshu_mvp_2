@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomTitle, rollRarityWithBonus, Rarity, TitleData } from '@/lib/titles';
 
-// 使用 Edge Runtime - 支持更长的执行时间
+// 使用 Edge Runtime - Hobby 计划最长 30 秒
 export const runtime = 'edge';
 
 // AI 图片生成配置
@@ -84,6 +84,10 @@ export async function POST(request: NextRequest) {
     let generatedImageUrl: string | null = null;
 
     try {
+      // 设置 28 秒超时（Edge Runtime 限制 30 秒，留 2 秒余量）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
+
       const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
         method: 'POST',
         headers: {
@@ -91,7 +95,10 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
       console.log('⏱️ API 响应时间:', Date.now() - startTime, 'ms');
@@ -112,6 +119,12 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       console.error('❌ AI 生成错误:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return NextResponse.json(
+          { success: false, error: 'AI 服务响应超时，请重试' },
+          { status: 504 }
+        );
+      }
       return NextResponse.json(
         { success: false, error: '网络错误，请重试' },
         { status: 500 }

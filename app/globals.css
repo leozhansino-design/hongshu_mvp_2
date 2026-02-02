@@ -125,3 +125,28 @@ body {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
+
+/* Safari/iOS 点击修复 */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 防止 iOS Safari 上的触摸延迟 */
+* {
+  touch-action: manipulation;
+}
+
+/* 确保按钮在 iOS 上可点击 */
+button:active,
+a:active,
+[role="button"]:active {
+  opacity: 0.9;
+}
