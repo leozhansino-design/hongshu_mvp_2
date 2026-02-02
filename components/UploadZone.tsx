@@ -91,8 +91,8 @@ export function UploadZone({ onImageSelect, preview }: UploadZoneProps) {
         rounded-3xl border-2 border-dashed cursor-pointer
         transition-all duration-300
         ${isDragging
-          ? 'border-white bg-white/10'
-          : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'
+          ? 'border-gray-900 bg-gray-50'
+          : 'border-gray-200 hover:border-gray-300 bg-gray-50/50'
         }
       `}
       onDrop={handleDrop}
@@ -110,19 +110,19 @@ export function UploadZone({ onImageSelect, preview }: UploadZoneProps) {
         animate={isDragging ? { scale: 1.1 } : { scale: 1 }}
         className="flex flex-col items-center text-center px-6"
       >
-        <div className="w-16 h-16 mb-6 rounded-2xl bg-zinc-800 flex items-center justify-center">
-          <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 mb-6 rounded-2xl bg-gray-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
 
-        <p className="text-lg font-medium text-white mb-2">
+        <p className="text-lg font-medium text-gray-900 mb-2">
           上传宠物照片
         </p>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-gray-500">
           拖拽或点击选择图片
         </p>
-        <p className="text-xs text-zinc-600 mt-2">
+        <p className="text-xs text-gray-400 mt-2">
           支持 JPG、PNG，最大 10MB
         </p>
       </motion.div>

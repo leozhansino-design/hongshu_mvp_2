@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomTitle, rollRarityWithBonus, Rarity, TitleData } from '@/lib/titles';
 
+// 使用 Edge Runtime - 支持更长的执行时间
+export const runtime = 'edge';
+
 // AI 图片生成配置
 const AI_CONFIG = {
   baseUrl: process.env.AI_API_BASE_URL || 'https://api.bltcy.ai',
   apiKey: process.env.AI_API_KEY || '',
-  model: process.env.AI_MODEL || 'nano-banana-2',
+  model: 'nano-banana-2',
   endpoint: '/v1/images/generations',
 };
 
@@ -13,6 +16,12 @@ interface GenerateRequest {
   petImage: string;
   petType: 'cat' | 'dog';
   weights: { SSR: number; SR: number; R: number; N: number };
+}
+
+// 构建增强的 prompt
+function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
+  const petWord = petType === 'cat' ? 'cat' : 'dog';
+  return `A ${petWord}, ${basePrompt}, maintain the original pet's appearance and features, high quality, detailed`;
 }
 
 export async function POST(request: NextRequest) {
@@ -26,66 +35,112 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 根据权重抽取稀有度
+    // 抽取稀有度和称号
     const rarity: Rarity = rollRarityWithBonus(weights);
-    console.log('🎲 抽取稀有度:', rarity, '权重:', weights);
-
-    // 获取随机称号
     const titleData: TitleData = getRandomTitle(rarity, petType);
-    console.log('🏷️ 抽取称号:', titleData.title);
-    console.log('🎨 发送 Prompt:', titleData.prompt);
+    const enhancedPrompt = buildEnhancedPrompt(titleData.prompt, petType);
 
-    let generatedImageUrl = petImage; // 默认使用原图
+    console.log('🎲 稀有度:', rarity, '称号:', titleData.title);
+    console.log('🎨 Prompt:', enhancedPrompt);
 
-    // 调用 AI 生成图片
-    if (AI_CONFIG.apiKey) {
-      try {
-        const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${AI_CONFIG.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt: titleData.prompt,
-            model: AI_CONFIG.model,
-            image: petImage, // 原始宠物图片作为参考
-          }),
-        });
-
-        const data = await response.json();
-        console.log('🖼️ API 响应:', data);
-
-        if (data.data && data.data[0] && data.data[0].url) {
-          generatedImageUrl = data.data[0].url;
-          console.log('✅ 图片生成成功:', generatedImageUrl);
-        } else {
-          console.log('⚠️ 图片生成失败，使用原图');
-        }
-      } catch (error) {
-        console.error('❌ AI 生成错误:', error);
-        // 失败时使用原图
-      }
-    } else {
-      console.log('⚠️ 未配置 AI API Key，使用原图');
+    // 检查 API Key 配置
+    if (!AI_CONFIG.apiKey) {
+      console.error('❌ 未配置 AI API Key');
+      return NextResponse.json(
+        { success: false, error: 'AI 服务未配置' },
+        { status: 500 }
+      );
     }
 
-    // 生成结果 ID（用于结果页面）
-    const resultId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // 准备图片数据
+    const imageArray: string[] = [];
+    if (petImage.startsWith('data:image')) {
+      const base64Data = petImage.split(',')[1];
+      imageArray.push(base64Data);
+      console.log('📷 图片大小:', Math.round(base64Data.length / 1024), 'KB');
+    } else if (petImage.startsWith('http')) {
+      imageArray.push(petImage);
+    }
 
+    if (imageArray.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '无效的图片格式' },
+        { status: 400 }
+      );
+    }
+
+    const requestBody: Record<string, unknown> = {
+      prompt: enhancedPrompt,
+      model: AI_CONFIG.model,
+      response_format: 'url',
+      aspect_ratio: '1:1',
+      image: imageArray,
+    };
+
+    console.log('⏳ 调用 AI API...');
+    console.log('🎨 Prompt:', enhancedPrompt);
+    const startTime = Date.now();
+
+    let generatedImageUrl: string | null = null;
+
+    try {
+      const response = await fetch(`${AI_CONFIG.baseUrl}${AI_CONFIG.endpoint}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${AI_CONFIG.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log('⏱️ API 响应时间:', Date.now() - startTime, 'ms');
+      console.log('📦 API 响应:', JSON.stringify(data).substring(0, 500));
+
+      if (data.data && data.data[0] && data.data[0].url) {
+        generatedImageUrl = data.data[0].url;
+        console.log('✅ 图片生成成功:', generatedImageUrl);
+      } else if (data.data && data.data[0] && data.data[0].b64_json) {
+        generatedImageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
+        console.log('✅ 图片生成成功 (base64)');
+      } else {
+        console.error('❌ API 响应异常:', JSON.stringify(data));
+        return NextResponse.json(
+          { success: false, error: data.error?.message || 'AI 生成失败，请重试' },
+          { status: 500 }
+        );
+      }
+    } catch (error) {
+      console.error('❌ AI 生成错误:', error);
+      return NextResponse.json(
+        { success: false, error: '网络错误，请重试' },
+        { status: 500 }
+      );
+    }
+
+    // 确保生成了图片才继续
+    if (!generatedImageUrl) {
+      return NextResponse.json(
+        { success: false, error: 'AI 生成失败' },
+        { status: 500 }
+      );
+    }
+
+    // 生成结果
+    const resultId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const result = {
       id: resultId,
       rarity,
       titleId: titleData.id,
       title: titleData.title,
       description: titleData.description,
-      prompt: titleData.prompt,
+      prompt: enhancedPrompt,
       originalImage: petImage,
       generatedImage: generatedImageUrl,
       petType,
     };
 
-    console.log('📦 生成结果:', { id: resultId, rarity, title: titleData.title });
+    console.log('📦 返回结果:', { id: resultId, rarity, title: titleData.title });
 
     return NextResponse.json({
       success: true,

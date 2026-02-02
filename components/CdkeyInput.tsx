@@ -41,11 +41,11 @@ export function CdkeyInput({ onVerify, isVerifying }: CdkeyInputProps) {
           placeholder="请输入卡密"
           disabled={isVerifying}
           className={`
-            w-full px-6 py-4 bg-zinc-900 border-2 rounded-2xl text-white text-center text-lg font-mono
-            placeholder:text-zinc-600 focus:outline-none transition-all duration-300
+            w-full px-6 py-4 bg-gray-50 border-2 rounded-2xl text-gray-900 text-center text-lg font-mono
+            placeholder:text-gray-400 focus:outline-none transition-all duration-300
             ${error
-              ? 'border-red-500/50 focus:border-red-500'
-              : 'border-zinc-800 focus:border-zinc-600'
+              ? 'border-red-400 focus:border-red-500'
+              : 'border-gray-200 focus:border-gray-400'
             }
             ${isVerifying ? 'opacity-50' : ''}
           `}
@@ -56,7 +56,7 @@ export function CdkeyInput({ onVerify, isVerifying }: CdkeyInputProps) {
         <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-red-400 text-sm text-center mb-4"
+          className="text-red-500 text-sm text-center mb-4"
         >
           {error}
         </motion.p>
@@ -68,8 +68,8 @@ export function CdkeyInput({ onVerify, isVerifying }: CdkeyInputProps) {
         className={`
           w-full py-4 rounded-full font-medium text-lg transition-all duration-300
           ${code.trim() && !isVerifying
-            ? 'bg-white text-black hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]'
-            : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+            ? 'bg-gray-900 text-white hover:bg-gray-800'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           }
         `}
       >
