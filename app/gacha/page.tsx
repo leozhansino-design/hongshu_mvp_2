@@ -73,11 +73,16 @@ export default function GachaPage() {
 
       if (!response.ok) {
         // 尝试解析错误信息
+        const text = await response.text();
+        console.error('API 错误响应:', response.status, text);
         try {
-          const errorData = await response.json();
-          throw new Error(errorData.error || '生成失败');
-        } catch {
-          throw new Error('生成失败，请重试');
+          const errorData = JSON.parse(text);
+          throw new Error(errorData.error || `生成失败 (${response.status})`);
+        } catch (e) {
+          if (e instanceof SyntaxError) {
+            throw new Error(`服务错误 (${response.status})`);
+          }
+          throw e;
         }
       }
 
