@@ -7,8 +7,8 @@ const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
   model: 'kling-v2',
-  // 正确的可灵图片生成端点
-  submitEndpoint: '/kling/v1/images/generations',
+  // 使用多图参考生图端点
+  submitEndpoint: '/kling/v1/images/multi-image2image',
   queryEndpoint: '/kling/v1/images/generations',
 }
 
@@ -156,13 +156,13 @@ Deno.serve(async (req) => {
       throw new Error('无效的图片格式，需要 data:image 或 http URL')
     }
 
-    // 构建可灵 API 请求 - 竖屏 9:16 (1024×1792)
-    // image2image 端点使用 image 字段传递图片
+    // 构建可灵 API 请求 - 多图参考生图
+    // subject_image_list 是数组，直接放纯 base64 字符串
     const requestBody = {
       model_name: AI_CONFIG.model,
       prompt: job.prompt,
       negative_prompt: '模糊, 低质量, 变形, 丑陋, 多余肢体',
-      image: imageData,  // 单张图片直接传
+      subject_image_list: [imageData],  // 数组格式
       n: 1,
       aspect_ratio: '9:16',
     }
