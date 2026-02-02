@@ -10,52 +10,37 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建 MJ prompt - 直接使用 titles.ts 里的英文 prompt
-// 每个头衔都有对应的详细英文描述
+// 构建真实风格的 prompt
+// 重点：真实照片风格、清晰毛发、穿职业服装、美丽背景
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
-  // 直接使用原有的英文 prompt，它们已经很详细了
-  // 只需要确保包含宠物类型
   const petWord = petType === 'cat' ? 'cat' : 'dog';
 
   // 替换 prompt 中的 "pet" 为具体的猫/狗
   let prompt = basePrompt.replace(/\bpet\b/gi, petWord);
+
+  // 真实风格增强词 - 确保生成真实照片风格而不是艺术风格
+  const realisticStyle = [
+    'ultra realistic photograph',
+    'professional studio portrait',
+    'detailed fur texture',
+    'sharp focus',
+    'beautiful lighting',
+    'high quality 8K',
+    'wearing professional clothes',
+    'elegant background',
+  ].join(', ');
 
   // 如果 prompt 不包含 cat/dog，在开头添加
   if (!prompt.toLowerCase().includes(petWord)) {
     prompt = `A ${petWord} ${prompt}`;
   }
 
-  return prompt;
+  // 添加真实风格增强
+  return `${prompt}, ${realisticStyle}`;
 }
 
-// 调用 Supabase Edge Function 处理图片生成
-async function triggerProcessing(jobId: string) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase config');
-    return;
-  }
-
-  try {
-    // 调用 Supabase Edge Function（不等待响应）
-    fetch(`${supabaseUrl}/functions/v1/generate-image`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ jobId }),
-    }).catch(err => {
-      console.log('Edge function call initiated (fire and forget):', err?.message || 'unknown');
-    });
-
-    console.log('🚀 已触发 Supabase Edge Function 处理:', jobId);
-  } catch (error) {
-    console.error('触发处理失败:', error);
-  }
-}
+// 注意：Edge Function 由前端结果页面调用，这里不再重复调用
+// 避免重复提交导致两次 API 调用
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,8 +92,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 任务创建成功:', jobId);
 
-    // 触发 Supabase Edge Function 处理（不等待）
-    triggerProcessing(jobId);
+    // Edge Function 由前端结果页面调用，避免重复调用
 
     // 立即返回任务ID，让前端开始轮询
     return NextResponse.json({
