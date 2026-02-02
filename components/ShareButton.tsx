@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { track, EVENTS } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
+import { ImageCropper } from './ImageCropper';
 
 interface ShareButtonProps {
   title: string;
@@ -25,6 +26,12 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
   const [saving, setSaving] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [savingType, setSavingType] = useState<DownloadType | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperConfig, setCropperConfig] = useState<{
+    shape: 'circle' | 'square';
+    size: number;
+    type: DownloadType;
+  } | null>(null);
 
   const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -115,138 +122,53 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
     return canvas.toDataURL('image/png');
   };
 
-  // 下载小红书头像（圆形）
-  const downloadXiaohongshu = async () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('无法创建 canvas');
+  // 打开裁剪器
+  const openCropper = (type: 'xiaohongshu' | 'wechat') => {
+    const config = type === 'xiaohongshu'
+      ? { shape: 'circle' as const, size: 400, type }
+      : { shape: 'square' as const, size: 640, type };
 
-    const size = 400; // 小红书头像尺寸
-    canvas.width = size;
-    canvas.height = size;
-
-    const img = await loadImage(image);
-
-    // 创建圆形裁剪
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-
-    // 绘制图片（居中裁剪）
-    const imgRatio = img.width / img.height;
-    let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
-
-    if (imgRatio > 1) {
-      // 图片较宽，裁剪左右
-      sWidth = img.height;
-      sx = (img.width - sWidth) / 2;
-    } else {
-      // 图片较高，裁剪上下
-      sHeight = img.width;
-      sy = (img.height - sHeight) / 2;
-    }
-
-    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
-
-    // 添加边框
-    ctx.strokeStyle = RARITY_CONFIG[rarity].color;
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
-    ctx.stroke();
-
-    return canvas.toDataURL('image/png');
+    setCropperConfig(config);
+    setShowCropper(true);
+    setShowOptions(false);
   };
 
-  // 下载微信头像（方形）
-  const downloadWechat = async () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('无法创建 canvas');
+  // 处理裁剪完成
+  const handleCropConfirm = (croppedImage: string) => {
+    if (!cropperConfig) return;
 
-    const size = 640; // 微信头像尺寸
-    canvas.width = size;
-    canvas.height = size;
+    const filename = cropperConfig.type === 'xiaohongshu'
+      ? `小红书头像-${rarity}-${title}.png`
+      : `微信头像-${rarity}-${title}.png`;
 
-    const img = await loadImage(image);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = croppedImage;
+    link.click();
 
-    // 绘制图片（居中裁剪为正方形）
-    const imgRatio = img.width / img.height;
-    let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+    track(EVENTS.SHARE_IMAGE_DOWNLOAD, { rarity, title, type: cropperConfig.type });
 
-    if (imgRatio > 1) {
-      sWidth = img.height;
-      sx = (img.width - sWidth) / 2;
-    } else {
-      sHeight = img.width;
-      sy = (img.height - sHeight) / 2;
-    }
-
-    // 圆角矩形裁剪
-    const radius = 40;
-    ctx.beginPath();
-    ctx.roundRect(0, 0, size, size, radius);
-    ctx.closePath();
-    ctx.clip();
-
-    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
-
-    // 底部渐变遮罩
-    const gradient = ctx.createLinearGradient(0, size * 0.6, 0, size);
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.7)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-
-    // 稀有度标签
-    const config = RARITY_CONFIG[rarity];
-    ctx.fillStyle = config.color;
-    ctx.beginPath();
-    ctx.roundRect(size / 2 - 40, 20, 80, 30, 15);
-    ctx.fill();
-
-    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(rarity, size / 2, 35);
-
-    // 标题
-    ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 5;
-    ctx.fillText(title.length > 8 ? title.slice(0, 8) + '...' : title, size / 2, size - 40);
-
-    return canvas.toDataURL('image/png');
+    setShowCropper(false);
+    setCropperConfig(null);
   };
 
   const handleDownload = async (type: DownloadType) => {
     if (saving) return;
 
+    // 头像类型打开裁剪器
+    if (type === 'xiaohongshu' || type === 'wechat') {
+      openCropper(type);
+      return;
+    }
+
+    // 完整卡片直接下载
     setSaving(true);
     setSavingType(type);
     track(EVENTS.SHARE_IMAGE_DOWNLOAD, { rarity, title, type });
 
     try {
-      let dataUrl: string;
-      let filename: string;
-
-      switch (type) {
-        case 'card':
-          dataUrl = await downloadCard();
-          filename = `宠物身份-${rarity}-${title}.png`;
-          break;
-        case 'xiaohongshu':
-          dataUrl = await downloadXiaohongshu();
-          filename = `小红书头像-${rarity}-${title}.png`;
-          break;
-        case 'wechat':
-          dataUrl = await downloadWechat();
-          filename = `微信头像-${rarity}-${title}.png`;
-          break;
-      }
+      const dataUrl = await downloadCard();
+      const filename = `宠物身份-${rarity}-${title}.png`;
 
       const link = document.createElement('a');
       link.download = filename;
@@ -323,14 +245,11 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-gray-900">小红书头像</p>
-                <p className="text-xs text-gray-400">圆形 · 400×400</p>
+                <p className="text-xs text-gray-400">圆形 · 可调整位置</p>
               </div>
-              {savingType === 'xiaohongshu' && (
-                <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              )}
+              <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
 
             <div className="h-px bg-gray-100" />
@@ -346,14 +265,11 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-gray-900">微信头像</p>
-                <p className="text-xs text-gray-400">方形 · 640×640</p>
+                <p className="text-xs text-gray-400">方形 · 可调整位置</p>
               </div>
-              {savingType === 'wechat' && (
-                <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              )}
+              <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </motion.div>
         )}
@@ -366,6 +282,25 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
           onClick={() => setShowOptions(false)}
         />
       )}
+
+      {/* 裁剪器 */}
+      <AnimatePresence>
+        {showCropper && cropperConfig && (
+          <ImageCropper
+            image={image}
+            shape={cropperConfig.shape}
+            size={cropperConfig.size}
+            title={title}
+            rarity={rarity}
+            rarityColor={RARITY_CONFIG[rarity].color}
+            onConfirm={handleCropConfirm}
+            onCancel={() => {
+              setShowCropper(false);
+              setCropperConfig(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
