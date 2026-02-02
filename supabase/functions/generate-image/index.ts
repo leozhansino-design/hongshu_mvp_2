@@ -7,8 +7,9 @@ const AI_CONFIG = {
   baseUrl: Deno.env.get('AI_API_BASE_URL') || 'https://api.bltcy.ai',
   apiKey: Deno.env.get('AI_API_KEY') || '',
   model: 'kling-v2',
-  submitEndpoint: '/kling/v1/images/multi-image2image',
-  queryEndpoint: '/kling/v1/images/generations',  // 查询用 generations 接口
+  // 使用单图 image2image 端点而不是 multi-image2image
+  submitEndpoint: '/kling/v1/images/image2image',
+  queryEndpoint: '/kling/v1/images/generations',
 }
 
 const corsHeaders = {
@@ -154,12 +155,12 @@ Deno.serve(async (req) => {
     }
 
     // 构建可灵 API 请求 - 竖屏 9:16 (1024×1792)
-    // subject_image_list 需要是对象数组，每个对象包含 image 字段
+    // image2image 端点使用 image 字段传递图片
     const requestBody = {
       model_name: AI_CONFIG.model,
       prompt: job.prompt,
       negative_prompt: '模糊, 低质量, 变形, 丑陋, 多余肢体',
-      subject_image_list: [{ image: imageData }],
+      image: imageData,  // 单张图片直接传
       n: 1,
       aspect_ratio: '9:16',
     }
