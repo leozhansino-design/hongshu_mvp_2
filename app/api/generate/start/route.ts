@@ -10,24 +10,22 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建增强的 prompt - 真实风格，穿衣服的宠物
+// 构建中文 prompt - 可灵模型使用中文效果更好
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
-  const petWord = petType === 'cat' ? 'cat' : 'dog';
+  const petWord = petType === 'cat' ? '猫咪' : '狗狗';
 
-  // 真实风格增强词 - 不要卡通/动画风格
+  // 中文风格增强词
   const styleBoost = [
-    'photorealistic',
-    'realistic fur texture',
-    'the pet MUST be wearing clothes or costume',
-    'detailed fabric and clothing',
-    'studio portrait lighting',
-    'sharp focus on face',
-    'professional photography',
-    'hyperrealistic',
-    '8k ultra detailed',
-  ].join(', ');
+    '超高清写实风格',
+    '必须穿着服装',
+    '精致的服装细节',
+    '专业摄影棚灯光',
+    '面部特写清晰',
+    '毛发质感逼真',
+    '8K超高清画质',
+  ].join('，');
 
-  return `A real ${petWord} portrait, ${basePrompt}, ${styleBoost}, preserve the original pet's unique facial features and fur pattern, NOT cartoon, NOT illustration, NOT anime`;
+  return `一只可爱的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
 }
 
 // 调用 Supabase Edge Function 处理图片生成
