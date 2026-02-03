@@ -23,39 +23,37 @@ function parsePetType(petType: PetTypeWithGender): { base: BasePetType; gender: 
   return { base: 'dog', gender: petType === 'dog_female' ? 'female' : 'male' };
 }
 
-// 性别特征描述
+// 性别特征描述 - 只描述外貌特征，不强制服装
 const GENDER_CHARACTERISTICS = {
   female: {
-    cat: 'elegant female cat with graceful features, feminine appearance, beautiful eyelashes',
-    dog: 'lovely female dog with gentle features, feminine appearance, beautiful eyes',
-    clothing: 'wearing elegant feminine attire, dress, skirt, or fashionable womens clothing',
-    avoid: 'avoid masculine suits, ties, or overly formal male business attire',
+    cat: 'elegant female cat with graceful feminine features, soft gentle expression, beautiful eyelashes, delicate appearance',
+    dog: 'lovely female dog with gentle feminine features, sweet expression, beautiful eyes, graceful appearance',
   },
   male: {
-    cat: 'handsome male cat with strong features, masculine appearance, confident look',
-    dog: 'handsome male dog with strong features, masculine appearance, confident look',
-    clothing: 'wearing smart masculine attire, suit, tie, or professional mens clothing',
-    avoid: 'avoid dresses, skirts, or feminine clothing',
+    cat: 'handsome male cat with strong masculine features, confident bold expression, sturdy build, dignified appearance',
+    dog: 'handsome male dog with strong masculine features, confident expression, robust build, noble appearance',
   },
 };
 
-// 构建真实风格的 prompt（包含性别特征）
+// 构建真实风格的 prompt（包含性别特征，但保留原有职业服装）
 function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): string {
   const { base, gender } = parsePetType(petType);
   const petWord = base === 'cat' ? 'cat' : 'dog';
-  const genderChar = GENDER_CHARACTERISTICS[gender];
+  const genderFeatures = GENDER_CHARACTERISTICS[gender][base];
 
-  // 替换 prompt 中的 "pet" 为具体的猫/狗（带性别特征）
-  let prompt = basePrompt.replace(/\bpet\b/gi, `${gender} ${petWord}`);
+  // 替换 prompt 中的 "pet" 为具体的猫/狗
+  let prompt = basePrompt.replace(/\bpet\b/gi, petWord);
 
-  // 替换 "cat" 或 "dog" 为带性别特征的版本
+  // 替换 "a cat" 或 "a dog" 为带性别的版本
   if (base === 'cat') {
-    prompt = prompt.replace(/\bcat\b/gi, `${gender} cat`);
+    prompt = prompt.replace(/\ba cat\b/gi, `a ${gender} cat`);
+    prompt = prompt.replace(/\bof a cat\b/gi, `of a ${gender} cat`);
   } else {
-    prompt = prompt.replace(/\bdog\b/gi, `${gender} dog`);
+    prompt = prompt.replace(/\ba dog\b/gi, `a ${gender} dog`);
+    prompt = prompt.replace(/\bof a dog\b/gi, `of a ${gender} dog`);
   }
 
-  // 真实风格增强词 - 确保生成真实照片风格而不是艺术风格
+  // 真实风格增强词
   const realisticStyle = [
     'ultra realistic photograph',
     'professional studio portrait',
@@ -65,16 +63,8 @@ function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): st
     'high quality 8K',
   ].join(', ');
 
-  // 性别特征增强
-  const genderEnhancement = `${genderChar[base]}, ${genderChar.clothing}`;
-
-  // 如果 prompt 不包含 cat/dog，在开头添加
-  if (!prompt.toLowerCase().includes(petWord)) {
-    prompt = `A ${gender} ${petWord} ${prompt}`;
-  }
-
-  // 添加真实风格增强和性别特征
-  return `${prompt}, ${genderEnhancement}, ${realisticStyle}`;
+  // 在 prompt 末尾添加性别特征（不改变服装，只增加外貌特征）
+  return `${prompt}, ${genderFeatures}, ${realisticStyle}`;
 }
 
 // 注意：Edge Function 由前端结果页面调用，这里不再重复调用
