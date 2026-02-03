@@ -41,23 +41,48 @@ function getCdkeyStatus(cdkey: Record<string, unknown>): 'available' | 'used' | 
 export async function GET() {
   try {
     const db = getSupabase();
-    // Get all cdkeys
+
+    // 获取真实总数统计（不限制数量）
+    const { count: totalCount, error: countError } = await db
+      .from('cdkeys')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('Count error:', countError);
+    }
+
+    // 获取各状态统计 - 新schema
+    const { count: usedCount } = await db
+      .from('cdkeys')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'used');
+
+    const { count: pendingCount } = await db
+      .from('cdkeys')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    const { count: availableCount } = await db
+      .from('cdkeys')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'available');
+
+    // 获取展示用的卡密列表（只取最新100条用于展示）
     const { data: cdkeys, error } = await db
       .from('cdkeys')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(1000); // 限制返回数量避免超大数据
+      .limit(100);
 
     if (error) {
       console.error('Supabase error:', error);
       throw error;
     }
 
-    // Calculate stats（支持新旧两种数据结构）
-    const total = cdkeys?.length || 0;
-    const used = cdkeys?.filter(c => getCdkeyStatus(c) === 'used').length || 0;
-    const pending = cdkeys?.filter(c => getCdkeyStatus(c) === 'pending').length || 0;
-    const available = cdkeys?.filter(c => getCdkeyStatus(c) === 'available').length || 0;
+    // 如果新schema统计有结果，使用新schema统计
+    const total = totalCount || 0;
+    const used = (usedCount || 0) + (pendingCount || 0); // pending也算已用
+    const available = availableCount || 0;
 
     const formattedCdkeys = cdkeys?.map(c => ({
       code: c.code,
@@ -70,7 +95,7 @@ export async function GET() {
       success: true,
       data: {
         cdkeys: formattedCdkeys,
-        stats: { total, used: used + pending, available },
+        stats: { total, used, available },
       },
     });
   } catch (error) {
