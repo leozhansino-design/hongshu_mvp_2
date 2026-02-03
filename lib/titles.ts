@@ -853,3 +853,13 @@ export function rollRarityWithBonus(bonusWeights: { SSR: number; SR: number; R: 
   if (roll < bonusWeights.SSR + bonusWeights.SR + bonusWeights.R) return 'R';
   return 'N';
 }
+
+// 获取所有头衔
+export function getAllTitles(): TitleData[] {
+  return TITLES_DATA;
+}
+
+// 根据ID获取头衔
+export function getTitleById(id: number): TitleData | undefined {
+  return TITLES_DATA.find(t => t.id === id);
+}

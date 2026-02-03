@@ -14,10 +14,10 @@ interface ShareButtonProps {
 }
 
 const RARITY_CONFIG = {
-  SSR: { color: '#F59E0B', percent: '5%' },
-  SR: { color: '#8B5CF6', percent: '15%' },
-  R: { color: '#3B82F6', percent: '30%' },
-  N: { color: '#71717A', percent: '50%' },
+  SSR: { color: '#F59E0B', name: '传说' },
+  SR: { color: '#8B5CF6', name: '史诗' },
+  R: { color: '#3B82F6', name: '稀有' },
+  N: { color: '#71717A', name: '普通' },
 };
 
 type DownloadType = 'card' | 'xiaohongshu' | 'wechat';
@@ -74,9 +74,9 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
     ctx.fillStyle = gradient;
     ctx.fillRect(0, height * 0.7, width, height * 0.3);
 
-    // 稀有度标签 - 在顶部
+    // 稀有度标签 - 在顶部，使用中文
     const config = RARITY_CONFIG[rarity];
-    const labelText = rarity;
+    const labelText = config.name;
     const labelFontSize = Math.round(24 * fontScale);
     ctx.font = `bold ${labelFontSize}px system-ui, -apple-system, sans-serif`;
     const labelWidth = ctx.measureText(labelText).width + Math.round(40 * fontScale);
