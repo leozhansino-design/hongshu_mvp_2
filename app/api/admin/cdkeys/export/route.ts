@@ -27,48 +27,66 @@ export async function GET() {
 
     const useNewSchema = sample && sample.length > 0 && 'status' in sample[0];
 
-    let codes: string[] = [];
+    const allCodes: string[] = [];
+    const pageSize = 1000;
+    let offset = 0;
+    let hasMore = true;
 
     if (useNewSchema) {
-      // 新 schema: 用 status 字段
-      const { data: cdkeys, error } = await db
-        .from('cdkeys')
-        .select('code')
-        .eq('status', 'available')
-        .order('created_at', { ascending: false });
+      // 新 schema: 分页获取所有 status='available' 的
+      while (hasMore) {
+        const { data, error } = await db
+          .from('cdkeys')
+          .select('code')
+          .eq('status', 'available')
+          .range(offset, offset + pageSize - 1)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Export error:', error);
-        throw error;
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          for (const item of data) {
+            allCodes.push(item.code);
+          }
+          offset += pageSize;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
       }
-
-      codes = cdkeys?.map(c => c.code) || [];
     } else {
-      // 旧 schema: 用 is_active 和 used_count/total_uses
-      const { data: cdkeys, error } = await db
-        .from('cdkeys')
-        .select('code, is_active, used_count, total_uses')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+      // 旧 schema: 分页获取所有 is_active=true 的，然后过滤
+      while (hasMore) {
+        const { data, error } = await db
+          .from('cdkeys')
+          .select('code, used_count, total_uses')
+          .eq('is_active', true)
+          .range(offset, offset + pageSize - 1)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Export error:', error);
-        throw error;
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          for (const item of data) {
+            const usedCount = item.used_count || 0;
+            const totalUses = item.total_uses || 1;
+            if (usedCount < totalUses) {
+              allCodes.push(item.code);
+            }
+          }
+          offset += pageSize;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
       }
-
-      // 过滤出真正可用的（used_count < total_uses）
-      codes = cdkeys?.filter(c => {
-        const usedCount = c.used_count || 0;
-        const totalUses = c.total_uses || 1;
-        return usedCount < totalUses;
-      }).map(c => c.code) || [];
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        codes,
-        count: codes.length,
+        codes: allCodes,
+        count: allCodes.length,
       },
     });
   } catch (error) {
