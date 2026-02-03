@@ -43,81 +43,89 @@ export function ShareButton({ title, rarity, image, description }: ShareButtonPr
     });
   };
 
-  // 下载完整卡片
+  // 下载完整卡片 - 保持原图比例
   const downloadCard = async () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('无法创建 canvas');
 
-    const width = 720;
-    const height = 1280;
+    const img = await loadImage(image);
+
+    // 使用原图尺寸，最大宽度 1080
+    const maxWidth = 1080;
+    const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+    const width = Math.round(img.width * scale);
+    const height = Math.round(img.height * scale);
+
     canvas.width = width;
     canvas.height = height;
 
-    const img = await loadImage(image);
+    // 绘制原图，保持比例
     ctx.drawImage(img, 0, 0, width, height);
 
-    // 渐变遮罩
-    const gradient = ctx.createLinearGradient(0, height * 0.5, 0, height);
+    // 根据尺寸计算字体大小（基于宽度缩放）
+    const fontScale = width / 720;
+
+    // 底部渐变遮罩 - 只在底部 30%
+    const gradient = ctx.createLinearGradient(0, height * 0.7, 0, height);
     gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+    gradient.addColorStop(0.5, 'rgba(0,0,0,0.6)');
     gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, height * 0.7, width, height * 0.3);
 
-    // 稀有度标签
+    // 稀有度标签 - 在顶部
     const config = RARITY_CONFIG[rarity];
-    const labelText = `${rarity} ${config.percent}`;
-    ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
-    const labelWidth = ctx.measureText(labelText).width + 40;
+    const labelText = rarity;
+    const labelFontSize = Math.round(24 * fontScale);
+    ctx.font = `bold ${labelFontSize}px system-ui, -apple-system, sans-serif`;
+    const labelWidth = ctx.measureText(labelText).width + Math.round(40 * fontScale);
+    const labelHeight = Math.round(40 * fontScale);
     const labelX = (width - labelWidth) / 2;
-    const labelY = 60;
+    const labelY = Math.round(40 * fontScale);
 
     ctx.fillStyle = config.color;
     ctx.beginPath();
-    ctx.roundRect(labelX, labelY, labelWidth, 50, 25);
+    ctx.roundRect(labelX, labelY, labelWidth, labelHeight, labelHeight / 2);
     ctx.fill();
 
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(labelText, width / 2, labelY + 25);
+    ctx.fillText(labelText, width / 2, labelY + labelHeight / 2);
 
     // 标题
-    ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+    const titleFontSize = Math.round(40 * fontScale);
+    ctx.font = `bold ${titleFontSize}px system-ui, -apple-system, sans-serif`;
     ctx.fillStyle = config.color;
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 10;
-    ctx.fillText(title, width / 2, height - 180);
+    ctx.shadowBlur = 8;
+    ctx.fillText(title, width / 2, height - Math.round(100 * fontScale));
 
     // 描述
-    ctx.font = '24px system-ui, -apple-system, sans-serif';
+    const descFontSize = Math.round(20 * fontScale);
+    ctx.font = `${descFontSize}px system-ui, -apple-system, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.shadowBlur = 5;
+    ctx.shadowBlur = 4;
 
-    const maxWidth = width - 80;
+    const maxTextWidth = width - Math.round(60 * fontScale);
     const words = description.split('');
     let line = '';
-    let y = height - 120;
+    let y = height - Math.round(55 * fontScale);
 
     for (const char of words) {
       const testLine = line + char;
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && line !== '') {
+      if (metrics.width > maxTextWidth && line !== '') {
         ctx.fillText(line, width / 2, y);
         line = char;
-        y += 36;
+        y += Math.round(28 * fontScale);
       } else {
         line = testLine;
       }
     }
     ctx.fillText(line, width / 2, y);
-
-    // 水印
-    ctx.font = '18px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.shadowBlur = 0;
-    ctx.fillText('宠物真实身份 · 仅供娱乐', width / 2, height - 30);
 
     return canvas.toDataURL('image/png');
   };

@@ -10,52 +10,37 @@ interface GenerateRequest {
   weights: { SSR: number; SR: number; R: number; N: number };
 }
 
-// 构建中文 prompt - 可灵模型使用中文效果更好
+// 构建真实风格的 prompt
+// 重点：真实照片风格、清晰毛发、穿职业服装、美丽背景
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
-  const petWord = petType === 'cat' ? '猫咪' : '狗狗';
+  const petWord = petType === 'cat' ? 'cat' : 'dog';
 
-  // 中文风格增强词
-  const styleBoost = [
-    '超高清写实风格',
-    '必须穿着服装',
-    '精致的服装细节',
-    '专业摄影棚灯光',
-    '面部特写清晰',
-    '毛发质感逼真',
-    '8K超高清画质',
-  ].join('，');
+  // 替换 prompt 中的 "pet" 为具体的猫/狗
+  let prompt = basePrompt.replace(/\bpet\b/gi, petWord);
 
-  return `一只可爱的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
-}
+  // 真实风格增强词 - 确保生成真实照片风格而不是艺术风格
+  const realisticStyle = [
+    'ultra realistic photograph',
+    'professional studio portrait',
+    'detailed fur texture',
+    'sharp focus',
+    'beautiful lighting',
+    'high quality 8K',
+    'wearing professional clothes',
+    'elegant background',
+  ].join(', ');
 
-// 调用 Supabase Edge Function 处理图片生成
-async function triggerProcessing(jobId: string) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase config');
-    return;
+  // 如果 prompt 不包含 cat/dog，在开头添加
+  if (!prompt.toLowerCase().includes(petWord)) {
+    prompt = `A ${petWord} ${prompt}`;
   }
 
-  try {
-    // 调用 Supabase Edge Function（不等待响应）
-    fetch(`${supabaseUrl}/functions/v1/generate-image`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ jobId }),
-    }).catch(err => {
-      console.log('Edge function call initiated (fire and forget):', err?.message || 'unknown');
-    });
-
-    console.log('🚀 已触发 Supabase Edge Function 处理:', jobId);
-  } catch (error) {
-    console.error('触发处理失败:', error);
-  }
+  // 添加真实风格增强
+  return `${prompt}, ${realisticStyle}`;
 }
+
+// 注意：Edge Function 由前端结果页面调用，这里不再重复调用
+// 避免重复提交导致两次 API 调用
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,11 +56,12 @@ export async function POST(request: NextRequest) {
     // 抽取稀有度和称号
     const rarity: Rarity = rollRarityWithBonus(weights);
     const titleData: TitleData = getRandomTitle(rarity, petType);
+    // 使用 titles.ts 里的英文 prompt（已经为每个头衔精心设计）
     const enhancedPrompt = buildEnhancedPrompt(titleData.prompt, petType);
 
     console.log('🎲 稀有度:', rarity, '称号:', titleData.title);
-    console.log('📝 原始 Prompt:', titleData.prompt);
-    console.log('🎨 完整 Prompt:', enhancedPrompt);
+    console.log('📝 原始 Prompt:', titleData.prompt.substring(0, 100) + '...');
+    console.log('🎨 最终 Prompt:', enhancedPrompt.substring(0, 100) + '...');
 
     // 生成任务ID
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -106,8 +92,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 任务创建成功:', jobId);
 
-    // 触发 Supabase Edge Function 处理（不等待）
-    triggerProcessing(jobId);
+    // Edge Function 由前端结果页面调用，避免重复调用
 
     // 立即返回任务ID，让前端开始轮询
     return NextResponse.json({

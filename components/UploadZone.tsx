@@ -78,8 +78,8 @@ export function UploadZone({ onImageSelect, preview }: UploadZoneProps) {
     setIsCompressing(true);
 
     try {
-      // 压缩图片到 800px，质量 0.8
-      const compressedDataUrl = await compressImage(file, 800, 0.8);
+      // 压缩图片到 1024px，质量 0.85（可灵 API 需要较高质量）
+      const compressedDataUrl = await compressImage(file, 1024, 0.85);
       onImageSelect(file, compressedDataUrl);
     } catch (error) {
       console.error('图片压缩失败:', error);
