@@ -26,7 +26,7 @@ export default function AdminLayout({
     e.preventDefault();
 
     // 简单密码验证（实际生产中应该使用更安全的方式）
-    if (password === 'admin123456') {
+    if (password === 'Admin123456') {
       setIsAuthenticated(true);
       sessionStorage.setItem('adminAuth', 'true');
       setError('');

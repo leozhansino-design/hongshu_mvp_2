@@ -21,6 +21,22 @@ function generateCdkey(prefix: string): string {
   return `${prefix}-${segment()}-${segment()}-${segment()}`;
 }
 
+// 判断卡密状态（支持新旧两种数据库结构）
+function getCdkeyStatus(cdkey: Record<string, unknown>): 'available' | 'used' | 'pending' {
+  // 新结构：status 字段
+  if (cdkey.status) {
+    return cdkey.status as 'available' | 'used' | 'pending';
+  }
+  // 旧结构：is_active + used_count + total_uses
+  if ('is_active' in cdkey) {
+    if (!cdkey.is_active) return 'used';
+    const usedCount = (cdkey.used_count as number) || 0;
+    const totalUses = (cdkey.total_uses as number) || 1;
+    return usedCount >= totalUses ? 'used' : 'available';
+  }
+  return 'available';
+}
+
 // GET - List cdkeys and stats
 export async function GET() {
   try {
@@ -29,18 +45,23 @@ export async function GET() {
     const { data: cdkeys, error } = await db
       .from('cdkeys')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1000); // 限制返回数量避免超大数据
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
 
-    // Calculate stats
+    // Calculate stats（支持新旧两种数据结构）
     const total = cdkeys?.length || 0;
-    const used = cdkeys?.filter(c => c.status === 'used').length || 0;
-    const available = cdkeys?.filter(c => c.status === 'available').length || 0;
+    const used = cdkeys?.filter(c => getCdkeyStatus(c) === 'used').length || 0;
+    const pending = cdkeys?.filter(c => getCdkeyStatus(c) === 'pending').length || 0;
+    const available = cdkeys?.filter(c => getCdkeyStatus(c) === 'available').length || 0;
 
     const formattedCdkeys = cdkeys?.map(c => ({
       code: c.code,
-      status: c.status,
+      status: getCdkeyStatus(c),
       createdAt: c.created_at,
       usedAt: c.used_at,
     })) || [];
@@ -49,13 +70,13 @@ export async function GET() {
       success: true,
       data: {
         cdkeys: formattedCdkeys,
-        stats: { total, used, available },
+        stats: { total, used: used + pending, available },
       },
     });
   } catch (error) {
     console.error('Failed to fetch cdkeys:', error);
     return NextResponse.json(
-      { success: false, error: '获取卡密列表失败' },
+      { success: false, error: `获取卡密列表失败: ${error instanceof Error ? error.message : '未知错误'}` },
       { status: 500 }
     );
   }
@@ -76,8 +97,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 检测表结构，决定使用哪种格式
+    const { data: sample } = await db
+      .from('cdkeys')
+      .select('*')
+      .limit(1);
+
+    // 判断使用新结构还是旧结构
+    const useNewSchema = sample && sample.length > 0
+      ? 'status' in sample[0]
+      : true; // 默认使用新结构
+
     // Generate unique cdkeys
-    const cdkeys: { code: string; status: string; remaining_uses: number }[] = [];
     const existingCodes = new Set<string>();
 
     // Get existing codes to avoid duplicates
@@ -87,39 +118,89 @@ export async function POST(request: NextRequest) {
 
     existing?.forEach(c => existingCodes.add(c.code));
 
+    const cdkeysToInsert: Record<string, unknown>[] = [];
     let attempts = 0;
-    while (cdkeys.length < count && attempts < count * 2) {
+
+    while (cdkeysToInsert.length < count && attempts < count * 2) {
       const code = generateCdkey(prefix);
       if (!existingCodes.has(code)) {
         existingCodes.add(code);
-        cdkeys.push({
-          code,
-          status: 'available',
-          remaining_uses: 1,
-        });
+
+        if (useNewSchema) {
+          // 新结构
+          cdkeysToInsert.push({
+            code,
+            status: 'available',
+            remaining_uses: 1,
+          });
+        } else {
+          // 旧结构
+          cdkeysToInsert.push({
+            code,
+            is_active: true,
+            total_uses: 1,
+            used_count: 0,
+          });
+        }
       }
       attempts++;
     }
 
-    // Insert in batches of 1000
-    const batchSize = 1000;
-    for (let i = 0; i < cdkeys.length; i += batchSize) {
-      const batch = cdkeys.slice(i, i + batchSize);
+    // Insert in batches of 500 (smaller batch for stability)
+    const batchSize = 500;
+    let insertedCount = 0;
+
+    for (let i = 0; i < cdkeysToInsert.length; i += batchSize) {
+      const batch = cdkeysToInsert.slice(i, i + batchSize);
       const { error } = await db
         .from('cdkeys')
         .insert(batch);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Batch insert error:', error);
+        // 如果是列不存在的错误，尝试使用另一种结构
+        if (error.message?.includes('column') || error.code === '42703') {
+          // 尝试另一种结构
+          const altBatch = batch.map(item => {
+            if ('status' in item) {
+              return {
+                code: item.code,
+                is_active: true,
+                total_uses: 1,
+                used_count: 0,
+              };
+            } else {
+              return {
+                code: item.code,
+                status: 'available',
+                remaining_uses: 1,
+              };
+            }
+          });
+
+          const { error: altError } = await db
+            .from('cdkeys')
+            .insert(altBatch);
+
+          if (altError) {
+            throw altError;
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      insertedCount += batch.length;
     }
 
     return NextResponse.json({
       success: true,
-      data: { count: cdkeys.length },
+      data: { count: insertedCount },
     });
   } catch (error) {
     console.error('Failed to generate cdkeys:', error);
     return NextResponse.json(
-      { success: false, error: '生成卡密失败' },
+      { success: false, error: `生成卡密失败: ${error instanceof Error ? error.message : '未知错误'}` },
       { status: 500 }
     );
   }
