@@ -42,7 +42,7 @@ export async function GET() {
   try {
     const db = getSupabase();
 
-    // 获取真实总数统计（不限制数量）
+    // 获取真实总数统计
     const { count: totalCount, error: countError } = await db
       .from('cdkeys')
       .select('*', { count: 'exact', head: true });
@@ -50,22 +50,6 @@ export async function GET() {
     if (countError) {
       console.error('Count error:', countError);
     }
-
-    // 获取各状态统计 - 新schema
-    const { count: usedCount } = await db
-      .from('cdkeys')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'used');
-
-    const { count: pendingCount } = await db
-      .from('cdkeys')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
-    const { count: availableCount } = await db
-      .from('cdkeys')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'available');
 
     // 获取展示用的卡密列表（只取最新100条用于展示）
     const { data: cdkeys, error } = await db
@@ -79,10 +63,63 @@ export async function GET() {
       throw error;
     }
 
-    // 如果新schema统计有结果，使用新schema统计
+    // 检测使用哪种 schema
+    const sample = cdkeys && cdkeys.length > 0 ? cdkeys[0] : null;
+    const useNewSchema = sample ? 'status' in sample : false;
+
+    let used = 0;
+    let available = 0;
+
+    if (useNewSchema) {
+      // 新 schema: 用 status 字段统计
+      const { count: usedCount } = await db
+        .from('cdkeys')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'used');
+
+      const { count: pendingCount } = await db
+        .from('cdkeys')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      const { count: availableCount } = await db
+        .from('cdkeys')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'available');
+
+      used = (usedCount || 0) + (pendingCount || 0);
+      available = availableCount || 0;
+    } else {
+      // 旧 schema: 用 is_active 和 used_count/total_uses 统计
+      // 可用: is_active = true 且 used_count < total_uses
+      const { count: activeCount } = await db
+        .from('cdkeys')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // 获取所有数据来计算真正的可用数（因为旧schema需要比较 used_count 和 total_uses）
+      const { data: allCdkeys } = await db
+        .from('cdkeys')
+        .select('is_active, used_count, total_uses');
+
+      if (allCdkeys) {
+        available = allCdkeys.filter(c => {
+          if (!c.is_active) return false;
+          const usedCount = c.used_count || 0;
+          const totalUses = c.total_uses || 1;
+          return usedCount < totalUses;
+        }).length;
+
+        used = allCdkeys.filter(c => {
+          if (!c.is_active) return true;
+          const usedCount = c.used_count || 0;
+          const totalUses = c.total_uses || 1;
+          return usedCount >= totalUses;
+        }).length;
+      }
+    }
+
     const total = totalCount || 0;
-    const used = (usedCount || 0) + (pendingCount || 0); // pending也算已用
-    const available = availableCount || 0;
 
     const formattedCdkeys = cdkeys?.map(c => ({
       code: c.code,
