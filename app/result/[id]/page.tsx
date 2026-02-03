@@ -99,6 +99,7 @@ export default function ResultPage() {
   const resultId = params.id as string;
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const edgeFunctionCalledRef = useRef(false);
+  const edgeFunctionCallTimeRef = useRef<number>(0); // 记录调用时间，防止重复
 
   // 字幕滚动
   useEffect(() => {
@@ -115,8 +116,19 @@ export default function ResultPage() {
 
   // 调用 Supabase Edge Function（从浏览器直接调用，无超时限制）
   const callEdgeFunction = useCallback(async (jobId: string) => {
-    if (edgeFunctionCalledRef.current) return;
+    // 防止重复调用：检查标志位和时间间隔（至少间隔60秒）
+    const now = Date.now();
+    if (edgeFunctionCalledRef.current) {
+      console.log('⚠️ Edge Function 已调用过，跳过');
+      return;
+    }
+    if (now - edgeFunctionCallTimeRef.current < 60000) {
+      console.log('⚠️ Edge Function 调用间隔太短，跳过');
+      return;
+    }
+
     edgeFunctionCalledRef.current = true;
+    edgeFunctionCallTimeRef.current = now;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -230,9 +242,11 @@ export default function ResultPage() {
         setLoadingStatus('AI 正在创作中...');
       } else if (data.status === 'pending') {
         setLoadingStatus('等待处理...');
-        // 如果仍在 pending，尝试再次调用 Edge Function
-        edgeFunctionCalledRef.current = false;
-        callEdgeFunction(jobId);
+        // 只在第一次调用 Edge Function，不要重复调用
+        // Edge Function 调用后会自动更新状态为 processing
+        if (!edgeFunctionCalledRef.current) {
+          callEdgeFunction(jobId);
+        }
       }
     } catch (err) {
       console.error('轮询失败:', err);

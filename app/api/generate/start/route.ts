@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getRandomTitle, rollRarityWithBonus, Rarity, TitleData } from '@/lib/titles';
+import { getRandomTitleEqual, TitleData } from '@/lib/titles';
 
 export const runtime = 'edge';
 
@@ -94,15 +94,16 @@ export async function POST(request: NextRequest) {
     // 解析宠物类型（提取基础类型用于匹配称号）
     const { base: basePetType, gender } = parsePetType(petType);
 
-    // 抽取稀有度和称号（使用基础类型匹配）
-    const rarity: Rarity = rollRarityWithBonus(weights);
-    const titleData: TitleData = getRandomTitle(rarity, basePetType);
+    // 抽取称号（所有100个称号概率均等，每个1%）
+    const titleData: TitleData = getRandomTitleEqual(basePetType);
+    // 稀有度由抽到的称号决定
+    const rarity = titleData.rarity;
     // 使用 titles.ts 里的英文 prompt（已经为每个头衔精心设计）+ 性别特征
     const enhancedPrompt = buildEnhancedPrompt(titleData.prompt, petType);
 
     console.log('🐾 宠物:', basePetType, '性别:', gender);
 
-    console.log('🎲 稀有度:', rarity, '称号:', titleData.title);
+    console.log('🎲 抽到称号:', titleData.title, '稀有度:', rarity);
     console.log('📝 原始 Prompt:', titleData.prompt.substring(0, 100) + '...');
     console.log('🎨 最终 Prompt:', enhancedPrompt.substring(0, 100) + '...');
 
