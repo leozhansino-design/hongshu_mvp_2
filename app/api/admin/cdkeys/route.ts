@@ -275,6 +275,25 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
+    if (action === 'clearAll') {
+      // 清空所有卡密
+      const { count } = await db
+        .from('cdkeys')
+        .select('*', { count: 'exact', head: true });
+
+      const { error } = await db
+        .from('cdkeys')
+        .delete()
+        .neq('code', ''); // 删除所有
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        data: { deleted: count || 0 },
+      });
+    }
+
     if (action === 'clearUsed') {
       // 检测 schema 类型
       const { data: sample } = await db

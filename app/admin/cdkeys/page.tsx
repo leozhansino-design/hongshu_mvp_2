@@ -139,6 +139,30 @@ export default function CdkeysPage() {
     }
   };
 
+  const clearAllCdkeys = async () => {
+    if (!confirm('⚠️ 确定要清空所有卡密吗？此操作将删除全部 ' + stats.total + ' 个卡密，不可恢复！')) return;
+    if (!confirm('⚠️⚠️ 再次确认：真的要删除所有卡密吗？')) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/cdkeys?action=clearAll', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: `已清空 ${data.data.deleted} 个卡密` });
+        fetchCdkeys();
+      } else {
+        setMessage({ type: 'error', text: data.error || '清空失败' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: '网络错误' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && cdkeys.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -321,6 +345,22 @@ export default function CdkeysPage() {
               className="w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium disabled:opacity-50"
             >
               清理已使用 ({stats.used} 个)
+            </motion.button>
+          </div>
+
+          <div className="p-4 bg-zinc-800 rounded-lg border border-red-500/30">
+            <h3 className="font-medium text-red-400 mb-2">⚠️ 清空所有卡密</h3>
+            <p className="text-zinc-400 text-sm mb-3">
+              删除数据库中的所有卡密，此操作不可恢复！
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={clearAllCdkeys}
+              disabled={loading || stats.total === 0}
+              className="w-full py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white font-medium disabled:opacity-50"
+            >
+              清空所有 ({stats.total} 个)
             </motion.button>
           </div>
         </div>
