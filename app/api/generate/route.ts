@@ -22,7 +22,7 @@ interface GenerateRequest {
 function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string {
   const petWord = petType === 'cat' ? '猫咪' : '狗狗';
 
-  // 中文风格增强词
+  // 中文风格增强词 - 优化眼睛和可爱度
   const styleBoost = [
     '超高清写实风格',
     '必须穿着服装',
@@ -31,9 +31,14 @@ function buildEnhancedPrompt(basePrompt: string, petType: 'cat' | 'dog'): string
     '面部特写清晰',
     '毛发质感逼真',
     '8K超高清画质',
+    // 眼睛优化 - 大瞳孔、圆眼睛、更萌
+    '水汪汪的大眼睛',
+    '圆圆的大瞳孔',
+    '眼神明亮有神',
+    '萌萌的表情',
   ].join('，');
 
-  return `一只可爱的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
+  return `一只超级可爱萌萌哒的${petWord}，${basePrompt}，${styleBoost}，保留原本宠物的毛色和面部特征`;
 }
 
 export async function POST(request: NextRequest) {
