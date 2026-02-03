@@ -80,7 +80,7 @@ interface GachaResult {
   prompt: string;
   originalImage: string;
   generatedImage: string;
-  petType: 'cat' | 'dog';
+  petType: string;
 }
 
 export default function ResultPage() {

@@ -10,7 +10,7 @@ export interface CollectionItem {
   rarity: Rarity;       // 稀有度
   description: string;  // 描述
   image: string;        // 生成的图片
-  petType: 'cat' | 'dog';
+  petType: string;      // 宠物类型：cat_female, cat_male, dog_female, dog_male
   collectedAt: number;  // 收藏时间戳
 }
 

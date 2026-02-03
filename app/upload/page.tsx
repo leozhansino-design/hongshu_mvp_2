@@ -7,7 +7,14 @@ import { motion } from 'framer-motion';
 import { UploadZone } from '@/components/UploadZone';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 
-type PetType = 'cat' | 'dog';
+type PetType = 'cat_female' | 'cat_male' | 'dog_female' | 'dog_male';
+
+const PET_OPTIONS: { type: PetType; emoji: string; label: string }[] = [
+  { type: 'cat_female', emoji: '🐱', label: '猫妹妹' },
+  { type: 'cat_male', emoji: '🐱', label: '猫弟弟' },
+  { type: 'dog_female', emoji: '🐕', label: '狗妹妹' },
+  { type: 'dog_male', emoji: '🐕', label: '狗弟弟' },
+];
 
 export default function UploadPage() {
   const router = useRouter();
@@ -92,33 +99,23 @@ export default function UploadPage() {
           className="mb-10"
         >
           <p className="text-center text-gray-500 mb-4">选择宠物类型</p>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => setPetType('cat')}
-              className={`
-                flex items-center gap-3 px-8 py-4 rounded-2xl border-2 transition-all duration-300
-                ${petType === 'cat'
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                }
-              `}
-            >
-              <span className="text-2xl">🐱</span>
-              <span className="font-medium">猫咪</span>
-            </button>
-            <button
-              onClick={() => setPetType('dog')}
-              className={`
-                flex items-center gap-3 px-8 py-4 rounded-2xl border-2 transition-all duration-300
-                ${petType === 'dog'
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                }
-              `}
-            >
-              <span className="text-2xl">🐕</span>
-              <span className="font-medium">狗狗</span>
-            </button>
+          <div className="grid grid-cols-2 gap-3">
+            {PET_OPTIONS.map((option) => (
+              <button
+                key={option.type}
+                onClick={() => setPetType(option.type)}
+                className={`
+                  flex items-center justify-center gap-2 px-4 py-4 rounded-2xl border-2 transition-all duration-300
+                  ${petType === option.type
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }
+                `}
+              >
+                <span className="text-2xl">{option.emoji}</span>
+                <span className="font-medium">{option.label}</span>
+              </button>
+            ))}
           </div>
         </motion.div>
 
