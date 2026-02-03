@@ -40,7 +40,7 @@ export default function GachaPage() {
 
   const generateImage = useCallback(async () => {
     const petImage = sessionStorage.getItem('petImage');
-    const petType = sessionStorage.getItem('petType') as 'cat' | 'dog' | null;
+    const petType = sessionStorage.getItem('petType');
     const weightsStr = sessionStorage.getItem('weights');
     const cdkeyCode = sessionStorage.getItem('cdkeyCode');
 

@@ -27,7 +27,7 @@ export default function RedeemPage() {
     setPetImage(image);
   }, [router]);
 
-  const handleVerify = async (code: string): Promise<boolean> => {
+  const handleVerify = async (code: string): Promise<{ success: boolean; errorType?: string }> => {
     setIsVerifying(true);
     track(EVENTS.CDKEY_VERIFY, { code });
 
@@ -44,15 +44,15 @@ export default function RedeemPage() {
         track(EVENTS.CDKEY_SUCCESS, { code });
         sessionStorage.setItem('cdkeyCode', code);
         router.push('/gacha');
-        return true;
+        return { success: true };
       } else {
-        track(EVENTS.CDKEY_FAIL, { code, error: data.error });
-        return false;
+        track(EVENTS.CDKEY_FAIL, { code, error: data.error, errorType: data.errorType });
+        return { success: false, errorType: data.errorType || 'default' };
       }
     } catch (error) {
       console.error('验证错误:', error);
       track(EVENTS.CDKEY_FAIL, { code, error: 'network_error' });
-      return false;
+      return { success: false, errorType: 'network' };
     } finally {
       setIsVerifying(false);
     }

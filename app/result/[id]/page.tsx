@@ -6,10 +6,56 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResultCard } from '@/components/ResultCard';
 import { ShareButton } from '@/components/ShareButton';
+import { CustomerServiceButton } from '@/components/CustomerServiceButton';
 import { track, EVENTS, trackPageView } from '@/lib/analytics';
 import { Rarity } from '@/lib/titles';
 import { addToCollection, isCollected, getUnlockProgress } from '@/lib/collection';
 import { playRevealSound, playSuccessSound } from '@/lib/sounds';
+
+// 错误类型及对应消息
+const ERROR_MESSAGES: Record<string, { title: string; message: string; action: string }> = {
+  timeout: {
+    title: 'AI 处理超时',
+    message: '图片生成时间过长，可能是服务器繁忙。',
+    action: '请稍后重试，或联系客服获取帮助。',
+  },
+  network: {
+    title: '网络连接失败',
+    message: '无法连接到服务器，请检查您的网络连接。',
+    action: '检查网络后重试，如问题持续请联系客服。',
+  },
+  invalid_image: {
+    title: '图片处理失败',
+    message: '上传的图片无法正常处理，可能格式不支持或文件损坏。',
+    action: '请尝试上传其他图片，建议使用 JPG 或 PNG 格式。',
+  },
+  generation_failed: {
+    title: 'AI 生成失败',
+    message: '图片生成过程中出现错误。',
+    action: '请点击重新生成，如多次失败请联系客服。',
+  },
+  server_error: {
+    title: '服务器错误',
+    message: '服务器出现临时故障，我们正在紧急处理。',
+    action: '请稍后重试，给您带来不便深表歉意。',
+  },
+  default: {
+    title: '生成失败',
+    message: '抱歉，生成过程中出现了问题。',
+    action: '请重试或联系客服获取帮助。',
+  },
+};
+
+// 解析错误类型
+function parseErrorType(error: string): string {
+  const lowerError = error.toLowerCase();
+  if (lowerError.includes('timeout') || lowerError.includes('超时')) return 'timeout';
+  if (lowerError.includes('network') || lowerError.includes('网络')) return 'network';
+  if (lowerError.includes('image') || lowerError.includes('图片')) return 'invalid_image';
+  if (lowerError.includes('generation') || lowerError.includes('生成')) return 'generation_failed';
+  if (lowerError.includes('server') || lowerError.includes('服务器')) return 'server_error';
+  return 'default';
+}
 
 // 搞怪字幕列表
 const FUNNY_SUBTITLES = [
@@ -34,7 +80,7 @@ interface GachaResult {
   prompt: string;
   originalImage: string;
   generatedImage: string;
-  petType: 'cat' | 'dog';
+  petType: string;
 }
 
 export default function ResultPage() {
@@ -104,6 +150,22 @@ export default function ResultPage() {
     }
   }, []);
 
+  // 标记卡密完成状态
+  const completeCdkey = useCallback(async (success: boolean) => {
+    const cdkeyCode = sessionStorage.getItem('cdkeyCode');
+    if (!cdkeyCode) return;
+
+    try {
+      await fetch('/api/cdkey/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: cdkeyCode, success }),
+      });
+    } catch (err) {
+      console.error('卡密状态更新失败:', err);
+    }
+  }, []);
+
   // 轮询任务状态
   const pollStatus = useCallback(async (jobId: string) => {
     try {
@@ -139,6 +201,9 @@ export default function ResultPage() {
         // 保存到 sessionStorage
         sessionStorage.setItem('gachaResult', JSON.stringify(gachaResult));
 
+        // 标记卡密为已使用
+        completeCdkey(true);
+
         track(EVENTS.GACHA_RESULT, {
           rarity: gachaResult.rarity,
           titleId: gachaResult.titleId,
@@ -151,8 +216,9 @@ export default function ResultPage() {
           pollingRef.current = null;
         }
       } else if (data.status === 'failed') {
-        // 生成失败
+        // 生成失败 - 恢复卡密
         console.error('❌ 生成失败:', data.error);
+        completeCdkey(false);
         setError(data.error || '生成失败，请重试');
         setIsLoading(false);
 
@@ -171,7 +237,7 @@ export default function ResultPage() {
     } catch (err) {
       console.error('轮询失败:', err);
     }
-  }, [callEdgeFunction]);
+  }, [callEdgeFunction, completeCdkey]);
 
   useEffect(() => {
     trackPageView('result');
@@ -278,12 +344,31 @@ export default function ResultPage() {
 
   // 错误状态
   if (error) {
+    const errorType = parseErrorType(error);
+    const errorInfo = ERROR_MESSAGES[errorType] || ERROR_MESSAGES.default;
+
     return (
       <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
-        <div className="text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-sm"
+        >
           <div className="text-6xl mb-6">😿</div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">生成失败</h1>
-          <p className="text-gray-500 mb-8">{error}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-3">{errorInfo.title}</h1>
+          <p className="text-gray-500 mb-2">{errorInfo.message}</p>
+          <p className="text-gray-400 text-sm mb-6">{errorInfo.action}</p>
+
+          {/* 错误详情（可折叠） */}
+          <details className="mb-6 text-left">
+            <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-500">
+              查看详细信息
+            </summary>
+            <div className="mt-2 p-3 bg-gray-100 rounded-lg text-xs text-gray-500 font-mono break-all">
+              {error}
+            </div>
+          </details>
+
           <div className="space-y-3">
             <button
               onClick={handleRetryFromError}
@@ -295,10 +380,27 @@ export default function ResultPage() {
               onClick={() => router.push('/upload')}
               className="w-full px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-300 transition-colors"
             >
-              返回
+              重新上传图片
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full px-8 py-3 text-gray-500 font-medium hover:text-gray-700 transition-colors"
+            >
+              返回首页
             </button>
           </div>
-        </div>
+
+          {/* 客服提示 */}
+          <div className="mt-8 p-4 bg-green-50 rounded-xl">
+            <p className="text-sm text-green-800 mb-2">
+              需要帮助？添加客服微信
+            </p>
+            <p className="font-mono font-bold text-green-700 text-lg">lifecurveai</p>
+          </div>
+        </motion.div>
+
+        {/* 悬浮客服按钮 */}
+        <CustomerServiceButton show={true} wechatId="lifecurveai" />
       </main>
     );
   }

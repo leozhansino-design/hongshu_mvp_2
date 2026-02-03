@@ -15,7 +15,7 @@ export default function QuestionsPage() {
     new Array(QUESTIONS.length).fill(null)
   );
   const [petImage, setPetImage] = useState<string | null>(null);
-  const [petType, setPetType] = useState<'cat' | 'dog' | null>(null);
+  const [petType, setPetType] = useState<string | null>(null);
 
   useEffect(() => {
     trackPageView('questions');
@@ -23,7 +23,7 @@ export default function QuestionsPage() {
 
     // 从 sessionStorage 读取宠物信息
     const image = sessionStorage.getItem('petImage');
-    const type = sessionStorage.getItem('petType') as 'cat' | 'dog' | null;
+    const type = sessionStorage.getItem('petType');
 
     if (!image || !type) {
       router.push('/upload');
