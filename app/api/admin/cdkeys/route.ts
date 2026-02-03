@@ -91,18 +91,28 @@ export async function GET() {
       available = availableCount || 0;
     } else {
       // 旧 schema: 用 is_active 和 used_count/total_uses 统计
-      // 可用: is_active = true 且 used_count < total_uses
-      const { count: activeCount } = await db
-        .from('cdkeys')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+      // 需要分页获取所有数据（突破1000条限制）
+      const pageSize = 1000;
+      let allCdkeys: { is_active: boolean; used_count: number; total_uses: number }[] = [];
+      let offset = 0;
+      let hasMore = true;
 
-      // 获取所有数据来计算真正的可用数（因为旧schema需要比较 used_count 和 total_uses）
-      const { data: allCdkeys } = await db
-        .from('cdkeys')
-        .select('is_active, used_count, total_uses');
+      while (hasMore) {
+        const { data: batch } = await db
+          .from('cdkeys')
+          .select('is_active, used_count, total_uses')
+          .range(offset, offset + pageSize - 1);
 
-      if (allCdkeys) {
+        if (batch && batch.length > 0) {
+          allCdkeys = allCdkeys.concat(batch);
+          offset += pageSize;
+          hasMore = batch.length === pageSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      if (allCdkeys.length > 0) {
         available = allCdkeys.filter(c => {
           if (!c.is_active) return false;
           const usedCount = c.used_count || 0;
