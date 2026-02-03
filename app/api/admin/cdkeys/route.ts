@@ -275,24 +275,79 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
-    if (action === 'clearUsed') {
-      // Count used cdkeys first
-      const { count: usedCount } = await db
+    if (action === 'clearAll') {
+      // 清空所有卡密
+      const { count } = await db
         .from('cdkeys')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'used');
+        .select('*', { count: 'exact', head: true });
 
-      // Delete used cdkeys
       const { error } = await db
         .from('cdkeys')
         .delete()
-        .eq('status', 'used');
+        .neq('code', ''); // 删除所有
 
       if (error) throw error;
 
       return NextResponse.json({
         success: true,
-        data: { deleted: usedCount || 0 },
+        data: { deleted: count || 0 },
+      });
+    }
+
+    if (action === 'clearUsed') {
+      // 检测 schema 类型
+      const { data: sample } = await db
+        .from('cdkeys')
+        .select('*')
+        .limit(1);
+
+      const useNewSchema = sample && sample.length > 0 && 'status' in sample[0];
+
+      let deletedCount = 0;
+
+      if (useNewSchema) {
+        // 新 schema: 删除 status = 'used'
+        const { count } = await db
+          .from('cdkeys')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'used');
+
+        const { error } = await db
+          .from('cdkeys')
+          .delete()
+          .eq('status', 'used');
+
+        if (error) throw error;
+        deletedCount = count || 0;
+      } else {
+        // 旧 schema: 删除 is_active = false 或 used_count >= total_uses
+        // 先获取所有需要删除的记录
+        const { data: allCdkeys } = await db
+          .from('cdkeys')
+          .select('id, is_active, used_count, total_uses');
+
+        const idsToDelete = allCdkeys?.filter(c => {
+          if (!c.is_active) return true;
+          const usedCount = c.used_count || 0;
+          const totalUses = c.total_uses || 1;
+          return usedCount >= totalUses;
+        }).map(c => c.id) || [];
+
+        if (idsToDelete.length > 0) {
+          const { error } = await db
+            .from('cdkeys')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (error) throw error;
+        }
+
+        deletedCount = idsToDelete.length;
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: { deleted: deletedCount },
       });
     }
 
