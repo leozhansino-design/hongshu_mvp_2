@@ -22,16 +22,27 @@ export default function AdminLayout({
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    // 简单密码验证（实际生产中应该使用更安全的方式）
-    if (password === 'Admin123456') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('adminAuth', 'true');
-      setError('');
-    } else {
-      setError('密码错误');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem('adminAuth', 'true');
+      } else {
+        setError(data.error || '密码错误');
+      }
+    } catch {
+      setError('网络错误，请重试');
     }
   };
 
