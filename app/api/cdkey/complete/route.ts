@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Lazy initialization to avoid build errors
+let supabase: SupabaseClient | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabase;
+}
 
 // 管理员卡密
 const ADMIN_CDKEY = 'DIANZI123';
@@ -22,9 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    const db = getSupabase();
+
     if (isSuccess) {
       // 成功 - 标记为已使用
-      const { error } = await supabase
+      const { error } = await db
         .from('cdkeys')
         .update({
           status: 'used',
@@ -40,7 +55,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // 失败 - 恢复为可用
-      const { error } = await supabase
+      const { error } = await db
         .from('cdkeys')
         .update({ status: 'available' })
         .eq('code', upperCode)

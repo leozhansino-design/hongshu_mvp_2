@@ -79,25 +79,41 @@ export default function CdkeysPage() {
     }
   };
 
-  const exportCsv = () => {
-    const availableCdkeys = cdkeys.filter(c => c.status === 'available');
-    if (availableCdkeys.length === 0) {
-      setMessage({ type: 'error', text: '没有可导出的卡密' });
-      return;
+  const exportTxt = async () => {
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // 从服务器获取所有可用卡密
+      const res = await fetch('/api/admin/cdkeys/export');
+      const data = await res.json();
+
+      if (!data.success) {
+        setMessage({ type: 'error', text: data.error || '导出失败' });
+        return;
+      }
+
+      const codes = data.data.codes as string[];
+      if (codes.length === 0) {
+        setMessage({ type: 'error', text: '没有可导出的卡密' });
+        return;
+      }
+
+      // 每行一个卡密
+      const txtContent = codes.join('\n');
+
+      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `cdkeys_${new Date().toISOString().slice(0, 10)}.txt`;
+      link.click();
+
+      setMessage({ type: 'success', text: `已导出 ${codes.length} 个卡密` });
+    } catch (err) {
+      setMessage({ type: 'error', text: '导出失败' });
+    } finally {
+      setLoading(false);
     }
-
-    const csvContent = [
-      ['卡密', '状态', '创建时间'].join(','),
-      ...availableCdkeys.map(c => [c.code, c.status, c.createdAt].join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `cdkeys_${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-
-    setMessage({ type: 'success', text: `已导出 ${availableCdkeys.length} 个卡密` });
   };
 
   const clearUsedCdkeys = async () => {
@@ -279,15 +295,16 @@ export default function CdkeysPage() {
           <div className="p-4 bg-zinc-800 rounded-lg">
             <h3 className="font-medium text-white mb-2">导出可用卡密</h3>
             <p className="text-zinc-400 text-sm mb-3">
-              导出所有未使用的卡密为 CSV 文件
+              导出所有未使用的卡密为 TXT 文件（每行一个卡密）
             </p>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={exportCsv}
-              className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium"
+              onClick={exportTxt}
+              disabled={loading || stats.available === 0}
+              className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium disabled:opacity-50"
             >
-              导出 CSV ({stats.available} 个可用)
+              {loading ? '导出中...' : `导出 TXT (${stats.available} 个可用)`}
             </motion.button>
           </div>
 
