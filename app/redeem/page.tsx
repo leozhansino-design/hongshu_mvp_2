@@ -60,8 +60,8 @@ export default function RedeemPage() {
 
   const handlePayClick = () => {
     track(EVENTS.BTN_PAY_CLICK);
-    // TODO: 跳转到购买页面或显示购买弹窗
-    alert('购买功能开发中，敬请期待！');
+    // 跳转到小红书购买页面
+    window.open('https://www.xiaohongshu.com/goods-detail/69819d977db7d20001b56e33?xsec_source=pc_arkselfshare', '_blank');
   };
 
   if (!petImage) {
@@ -151,7 +151,7 @@ export default function RedeemPage() {
           onClick={handlePayClick}
           className="w-full py-4 rounded-full font-medium text-lg border-2 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-all duration-300"
         >
-          获取卡密
+          点击进入小红书购买
         </motion.button>
 
         {/* 底部提示 */}
