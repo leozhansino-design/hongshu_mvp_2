@@ -36,6 +36,7 @@ const GENDER_CHARACTERISTICS = {
 };
 
 // 构建真实风格的 prompt（包含性别特征，但保留原有职业服装）
+// 最重要：必须保留原图宠物的特征（毛色、脸型、眼睛等）
 function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): string {
   const { base, gender } = parsePetType(petType);
   const petWord = base === 'cat' ? 'cat' : 'dog';
@@ -53,18 +54,27 @@ function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): st
     prompt = prompt.replace(/\bof a dog\b/gi, `of a ${gender} dog`);
   }
 
+  // 【最重要】保留原图宠物特征的指令 - 放在最前面
+  const preserveOriginal = [
+    'IMPORTANT: preserve the exact appearance of the pet from the reference image',
+    'keep the same fur color and pattern',
+    'maintain the original face shape and facial features',
+    'same eye color and expression',
+    'the pet must be recognizable as the same individual',
+  ].join(', ');
+
   // 真实风格增强词
   const realisticStyle = [
     'ultra realistic photograph',
     'professional studio portrait',
-    'detailed fur texture',
+    'detailed fur texture matching the original',
     'sharp focus',
     'beautiful lighting',
     'high quality 8K',
   ].join(', ');
 
-  // 在 prompt 末尾添加性别特征（不改变服装，只增加外貌特征）
-  return `${prompt}, ${genderFeatures}, ${realisticStyle}`;
+  // 组合：保留原图特征指令 + 职业prompt + 性别特征 + 真实风格
+  return `${preserveOriginal}, ${prompt}, ${genderFeatures}, ${realisticStyle}`;
 }
 
 // 注意：Edge Function 由前端结果页面调用，这里不再重复调用
