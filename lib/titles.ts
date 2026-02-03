@@ -825,12 +825,22 @@ export const TITLES_DATA: TitleData[] = [
   },
 ];
 
-// 获取随机称号
+// 获取随机称号（旧方法：按稀有度筛选）
 export function getRandomTitle(rarity: Rarity, petType: 'cat' | 'dog'): TitleData {
   const filtered = TITLES_DATA.filter(t =>
     t.rarity === rarity &&
     (t.petType === 'universal' || t.petType === petType)
   );
+  return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+// 获取随机称号（新方法：所有100个称号概率均等，每个1%）
+export function getRandomTitleEqual(petType: 'cat' | 'dog'): TitleData {
+  // 只筛选符合宠物类型的称号
+  const filtered = TITLES_DATA.filter(t =>
+    t.petType === 'universal' || t.petType === petType
+  );
+  // 随机选一个
   return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
