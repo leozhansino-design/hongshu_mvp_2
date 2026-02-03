@@ -86,7 +86,7 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className={`relative w-full max-w-xs sm:max-w-sm mx-auto rounded-3xl overflow-hidden ${config.glow}`}
+        className={`relative w-full max-w-sm sm:max-w-md mx-auto rounded-3xl overflow-hidden ${config.glow}`}
       >
         {/* 渐变边框 */}
         <div className={`${config.borderGradient} p-[3px] rounded-3xl`}>
