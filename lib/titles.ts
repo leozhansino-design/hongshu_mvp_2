@@ -321,7 +321,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'R',
     title: '一人食餐厅常客',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sitting alone at a hot pot restaurant table with single portion hot pot, surrounded by empty chairs, background is a late-night restaurant interior, professional studio portrait, detailed fur texture, sharp focus, warm restaurant lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cozy oversized hoodie, sitting alone at a hot pot restaurant table with single portion hot pot, surrounded by empty chairs, background is a late-night restaurant interior, professional studio portrait, detailed fur texture, sharp focus, warm restaurant lighting, high quality 8K',
     description: '"一个人吃火锅，两个人的量，它说这叫仪式感。"'
   },
   {
@@ -377,7 +377,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'R',
     title: '反向背锅侠',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with an innocent expression, sitting next to a broken vase with scattered pieces, background is a living room with evidence of mischief, professional studio portrait, detailed fur texture, sharp focus, dramatic courtroom-style lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a striped prison uniform, with an innocent expression, sitting next to a broken vase with scattered pieces, background is a living room with evidence of mischief, professional studio portrait, detailed fur texture, sharp focus, dramatic courtroom-style lighting, high quality 8K',
     description: '"证据确凿，但它眼神里的坚定让你怀疑自己。"'
   },
   {
@@ -409,7 +409,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'R',
     title: '星巴克蹭网专家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sitting at a coffee shop table with a laptop and a small coffee cup, occupying a power outlet seat, background is a cozy Starbucks interior, professional studio portrait, detailed fur texture, sharp focus, warm cafe lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a casual hipster cardigan and glasses, sitting at a coffee shop table with a laptop and a small coffee cup, occupying a power outlet seat, background is a cozy Starbucks interior, professional studio portrait, detailed fur texture, sharp focus, warm cafe lighting, high quality 8K',
     description: '"点一杯最便宜的美式，蹭8小时WiFi和空调，这叫性价比。"'
   },
   {
@@ -444,7 +444,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '村口二傻子',
     petType: 'dog',
-    prompt: 'ultra realistic photograph of a dog with a big red flower decoration on head and red ribbon around neck, tongue hanging out happily, background is a rural wheat field at sunset, professional studio portrait, detailed fur texture, sharp focus, warm golden hour lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a dog wearing a traditional Chinese red dudou vest with big red flower decoration on head and red ribbon around neck, tongue hanging out happily, background is a rural wheat field at sunset, professional studio portrait, detailed fur texture, sharp focus, warm golden hour lighting, high quality 8K',
     description: '"它的智商虽然欠费，但它的快乐是无限流量。"'
   },
   {
@@ -476,7 +476,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '真不熟·陌生人',
     petType: 'cat',
-    prompt: 'ultra realistic photograph of a cat with an aloof distant expression, sitting alone on a windowsill looking away, background is a minimalist room, professional studio portrait, detailed fur texture, sharp focus, cool distant lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a cat wearing a sleek black turtleneck sweater, with an aloof distant expression, sitting alone on a windowsill looking away, background is a minimalist room, professional studio portrait, detailed fur texture, sharp focus, cool distant lighting, high quality 8K',
     description: '"你以为你是它主人？其实你只是个喂食机器。"'
   },
   {
@@ -484,7 +484,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '甚至不敢看余额',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet covering its eyes with paws, standing in front of an ATM machine, background shows bank interior, professional studio portrait, detailed fur texture, sharp focus, cold bank lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a shabby patched jacket with empty pockets turned out, covering its eyes with paws, standing in front of an ATM machine, background shows bank interior, professional studio portrait, detailed fur texture, sharp focus, cold bank lighting, high quality 8K',
     description: '"穷得只剩下可爱了，但这玩意儿不能换小鱼干。"'
   },
   {
@@ -492,7 +492,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '纯种憨货',
     petType: 'dog',
-    prompt: 'ultra realistic photograph of a dog in mid-run with legs tangled up awkwardly, goofy happy expression, background is a green park, professional studio portrait, detailed fur texture, sharp focus, bright outdoor lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a dog wearing a sporty tracksuit, in mid-run with legs tangled up awkwardly, goofy happy expression, background is a green park, professional studio portrait, detailed fur texture, sharp focus, bright outdoor lighting, high quality 8K',
     description: '"它进化的时候可能忘了带说明书。"'
   },
   {
@@ -508,7 +508,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '电子榨菜本人',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sitting in front of a tablet propped up showing a video, eating from a food bowl while watching, background is a cozy living room, professional studio portrait, detailed fur texture, sharp focus, screen glow lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a comfy food-stained t-shirt, sitting in front of a tablet propped up showing a video, eating from a food bowl while watching, background is a cozy living room, professional studio portrait, detailed fur texture, sharp focus, screen glow lighting, high quality 8K',
     description: '"看它吃饭比你自己吃饭还香，这就是它的价值。"'
   },
   {
@@ -516,7 +516,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '抽象派艺术家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet covered in colorful paint splatters, standing in front of a canvas with paw prints, background is an art studio with messy paints, professional studio portrait, detailed fur texture, sharp focus, artistic studio lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a paint-splattered artist smock and beret, covered in colorful paint splatters, standing in front of a canvas with paw prints, background is an art studio with messy paints, professional studio portrait, detailed fur texture, sharp focus, artistic studio lighting, high quality 8K',
     description: '"它拆家不是破坏，是在进行行为艺术创作。"'
   },
   {
@@ -524,7 +524,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '由于太笨被踢出神界',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with angel wings costume and crooked halo, looking confused, background is fluffy white clouds, professional studio portrait, detailed fur texture, sharp focus, heavenly soft lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a white angel robe with angel wings costume and crooked halo, looking confused, background is fluffy white clouds, professional studio portrait, detailed fur texture, sharp focus, heavenly soft lighting, high quality 8K',
     description: '"上帝关上了它的门，还顺便焊死了它的窗。"'
   },
   {
@@ -540,7 +540,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '走路先迈左脚的笨蛋',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with legs tangled up in an awkward walking pose, looking confused, background is a simple sidewalk, professional studio portrait, detailed fur texture, sharp focus, natural daylight, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a clumsy oversized raincoat, with legs tangled up in an awkward walking pose, looking confused, background is a simple sidewalk, professional studio portrait, detailed fur texture, sharp focus, natural daylight, high quality 8K',
     description: '"协调性基本为零，可爱度基本爆表。"'
   },
   {
@@ -548,7 +548,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '甚至打不过蟑螂',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet hiding behind a couch cushion looking scared, peeking out cautiously, background is a living room, professional studio portrait, detailed fur texture, sharp focus, dramatic shadow lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cowardly superhero cape, hiding behind a couch cushion looking scared, peeking out cautiously, background is a living room, professional studio portrait, detailed fur texture, sharp focus, dramatic shadow lighting, high quality 8K',
     description: '"它是和平主义者，绝对不是因为胆小。"'
   },
   {
@@ -556,7 +556,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '躲猫猫第一名(露屁股)',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with head hidden in a paper bag but entire back half sticking out, funny failed hiding pose, background is a living room, professional studio portrait, detailed fur texture, sharp focus, natural indoor lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a camouflage vest, with head hidden in a paper bag but entire back half sticking out, funny failed hiding pose, background is a living room, professional studio portrait, detailed fur texture, sharp focus, natural indoor lighting, high quality 8K',
     description: '"掩耳盗铃的当代传人，只要我看不到你，你就没看我。"'
   },
   {
@@ -564,7 +564,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '拆家界泥石流',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet surrounded by torn cushion stuffing and fabric pieces, looking innocent, background is a destroyed living room, professional studio portrait, detailed fur texture, sharp focus, dramatic evidence lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a construction worker hard hat and vest, surrounded by torn cushion stuffing and fabric pieces, looking innocent, background is a destroyed living room, professional studio portrait, detailed fur texture, sharp focus, dramatic evidence lighting, high quality 8K',
     description: '"给它一个支点，它能撬动你整套红木家具。"'
   },
   {
@@ -572,7 +572,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '反射弧绕地球三圈',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with a delayed surprised expression, eyes wide and confused, background is a simple room, professional studio portrait, detailed fur texture, sharp focus, neutral lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a loading spinner t-shirt, with a delayed surprised expression, eyes wide and confused, background is a simple room, professional studio portrait, detailed fur texture, sharp focus, neutral lighting, high quality 8K',
     description: '"它的延迟比你玩外服游戏还要高。"'
   },
   {
@@ -580,7 +580,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '傻到深处自然萌',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with head tilted to side, tongue slightly out, looking adorably confused, background is a soft pink flower garden, professional studio portrait, detailed fur texture, sharp focus, soft dreamy lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cute pink frilly dress with bow, with head tilted to side, tongue slightly out, looking adorably confused, background is a soft pink flower garden, professional studio portrait, detailed fur texture, sharp focus, soft dreamy lighting, high quality 8K',
     description: '"虽然脑子里空空如也，但心里全都是你。"'
   },
   {
@@ -588,7 +588,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '退堂鼓一级演奏家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet slowly backing away with an anxious worried expression, background is a challenging obstacle or task, professional studio portrait, detailed fur texture, sharp focus, tense lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a retreat-themed hoodie with white flag pattern, slowly backing away with an anxious worried expression, background is a challenging obstacle or task, professional studio portrait, detailed fur texture, sharp focus, tense lighting, high quality 8K',
     description: '"还没开始就已经想放弃了，这是天赋。"'
   },
   {
@@ -596,7 +596,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '专业气人小能手',
     petType: 'cat',
-    prompt: 'ultra realistic photograph of a cat with a smug satisfied expression, knocked over cup visible in background, sitting proudly, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a cat wearing a mischievous devil costume with tiny horns, with a smug satisfied expression, knocked over cup visible in background, sitting proudly, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
     description: '"气你是工作，可爱是副业，两手都要抓。"'
   },
   {
@@ -604,7 +604,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '睡神转世',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sleeping in a weird twisted position, completely relaxed and drooling slightly, background is a cozy bed, professional studio portrait, detailed fur texture, sharp focus, soft warm lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing cute star-patterned pajamas and sleep cap, sleeping in a weird twisted position, completely relaxed and drooling slightly, background is a cozy bed, professional studio portrait, detailed fur texture, sharp focus, soft warm lighting, high quality 8K',
     description: '"一天睡20小时，剩下4小时用来准备睡觉。"'
   },
   {
@@ -612,7 +612,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '摆烂艺术家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet lying completely flat on the floor like melted butter, zero energy, background is a simple room floor, professional studio portrait, detailed fur texture, sharp focus, soft overhead lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a lazy sloth onesie, lying completely flat on the floor like melted butter, zero energy, background is a simple room floor, professional studio portrait, detailed fur texture, sharp focus, soft overhead lighting, high quality 8K',
     description: '"躺平不是消极，是一种行为艺术。"'
   },
   {
@@ -620,7 +620,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '发疯文学代表',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with wild crazy eyes and messy fur standing up, chaotic energetic pose, background is a slightly messy room, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a chaotic punk rock jacket with spikes, with wild crazy eyes and messy fur standing up, chaotic energetic pose, background is a slightly messy room, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
     description: '"精神状态遥遥领先，已经疯成了别人羡慕的样子。"'
   },
   {
@@ -628,7 +628,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '底层互害专家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet accidentally stepping on its own tail, funny self-sabotage moment, background is a simple room, professional studio portrait, detailed fur texture, sharp focus, comedic timing lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a clumsy clown costume, accidentally stepping on its own tail, funny self-sabotage moment, background is a simple room, professional studio portrait, detailed fur texture, sharp focus, comedic timing lighting, high quality 8K',
     description: '"伤害性不大，侮辱性极强，主要伤害自己。"'
   },
   {
@@ -636,7 +636,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '人类迷惑行为观察员',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with a judging confused expression, looking at camera like observing strange behavior, background is a living room, professional studio portrait, detailed fur texture, sharp focus, documentary style lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a detective trench coat and magnifying glass, with a judging confused expression, looking at camera like observing strange behavior, background is a living room, professional studio portrait, detailed fur texture, sharp focus, documentary style lighting, high quality 8K',
     description: '"它每天都在研究一个课题：你为什么这么傻。"'
   },
   {
@@ -644,7 +644,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '蹭饭界天花板',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with the most pleading puppy dog eyes, sitting next to an empty food bowl, background is a kitchen, professional studio portrait, detailed fur texture, sharp focus, soft sympathetic lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a tattered beggar costume with empty tin can, with the most pleading puppy dog eyes, sitting next to an empty food bowl, background is a kitchen, professional studio portrait, detailed fur texture, sharp focus, soft sympathetic lighting, high quality 8K',
     description: '"明明刚吃完，但它的眼神在说它三天没吃了。"'
   },
   {
@@ -652,7 +652,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '社会性死亡当事人',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with an extremely embarrassed expression, covering face with paws, background is a spotlight on stage, professional studio portrait, detailed fur texture, sharp focus, awkward spotlight lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cringe-worthy formal outfit with mismatched colors, with an extremely embarrassed expression, covering face with paws, background is a spotlight on stage, professional studio portrait, detailed fur texture, sharp focus, awkward spotlight lighting, high quality 8K',
     description: '"它经历过的尴尬，比你一辈子都多。"'
   },
   {
@@ -660,7 +660,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '假装听懂专家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet nodding with a fake understanding expression but clearly confused, background is an office setting, professional studio portrait, detailed fur texture, sharp focus, meeting room lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing thick fake nerd glasses and a business casual shirt, nodding with a fake understanding expression but clearly confused, background is an office setting, professional studio portrait, detailed fur texture, sharp focus, meeting room lighting, high quality 8K',
     description: '"它一脸懂了的样子，其实脑子里在想肉干。"'
   },
   {
@@ -668,7 +668,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '原地emo选手',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sitting alone in a corner looking sad and melancholic for no reason, background is a dim room, professional studio portrait, detailed fur texture, sharp focus, moody blue lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a black emo hoodie with sad face print, sitting alone in a corner looking sad and melancholic for no reason, background is a dim room, professional studio portrait, detailed fur texture, sharp focus, moody blue lighting, high quality 8K',
     description: '"没有什么事情发生，但它就是突然不开心了。"'
   },
   {
@@ -676,7 +676,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '假笑男/女孩',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with a forced awkward smile, clearly fake happiness, background is a photo studio, professional studio portrait, detailed fur texture, sharp focus, stock photo style lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cheesy stock photo style polo shirt, with a forced awkward smile, clearly fake happiness, background is a photo studio, professional studio portrait, detailed fur texture, sharp focus, stock photo style lighting, high quality 8K',
     description: '"笑容是假的，但想吃零食的心是真的。"'
   },
   {
@@ -684,7 +684,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '精准踩雷专家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet stepping into a puddle or mess, unlucky moment captured, background is a sidewalk, professional studio portrait, detailed fur texture, sharp focus, unfortunate moment lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing brand new white sneakers and clean outfit, stepping into a puddle or mess, unlucky moment captured, background is a sidewalk, professional studio portrait, detailed fur texture, sharp focus, unfortunate moment lighting, high quality 8K',
     description: '"如果有一滩水，它一定会踩进去。"'
   },
   {
@@ -692,7 +692,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '嘴硬王',
     petType: 'cat',
-    prompt: 'ultra realistic photograph of a cat with a stubborn pouty expression, turned away dramatically but peeking back, background is a cozy room, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a cat wearing a tsundere-style frilly collar with bell, with a stubborn pouty expression, turned away dramatically but peeking back, background is a cozy room, professional studio portrait, detailed fur texture, sharp focus, dramatic lighting, high quality 8K',
     description: '"明明很想要抱抱，但就是不说。"'
   },
   {
@@ -700,7 +700,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '窝里横冠军',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet looking fierce and confident at home standing tall, background is a comfortable living room, professional studio portrait, detailed fur texture, sharp focus, confident indoor lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a tiger-striped robe like a home boss, looking fierce and confident at home standing tall, background is a comfortable living room, professional studio portrait, detailed fur texture, sharp focus, confident indoor lighting, high quality 8K',
     description: '"在家是老虎，出门是猫咪（反过来也成立）。"'
   },
   {
@@ -708,7 +708,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '已读不回大师',
     petType: 'cat',
-    prompt: 'ultra realistic photograph of a cat glancing at a phone screen with a completely disinterested expression, ignoring it, background is a cozy bed, professional studio portrait, detailed fur texture, sharp focus, phone screen glow, high quality 8K',
+    prompt: 'ultra realistic photograph of a cat wearing a cool indifferent attitude sweater, glancing at a phone screen with a completely disinterested expression, ignoring it, background is a cozy bed, professional studio portrait, detailed fur texture, sharp focus, phone screen glow, high quality 8K',
     description: '"看到了，但是不想理你，很合理。"'
   },
   {
@@ -716,7 +716,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '废话文学集大成者',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with mouth open as if talking endlessly, lecturer pose, background is a podium or stage, professional studio portrait, detailed fur texture, sharp focus, presentation lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a professor blazer with elbow patches, with mouth open as if talking endlessly, lecturer pose, background is a podium or stage, professional studio portrait, detailed fur texture, sharp focus, presentation lighting, high quality 8K',
     description: '"听君一席话，如听一席话。"'
   },
   {
@@ -724,7 +724,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '什么都想吃协会',
     petType: 'dog',
-    prompt: 'ultra realistic photograph of a dog drooling while staring intensely at food, hungry eager expression, background is a dining table with food, professional studio portrait, detailed fur texture, sharp focus, appetizing food lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a dog wearing a foodie bib that says I Love Food, drooling while staring intensely at food, hungry eager expression, background is a dining table with food, professional studio portrait, detailed fur texture, sharp focus, appetizing food lighting, high quality 8K',
     description: '"世界上只有两种东西：能吃的，和还没试过能不能吃的。"'
   },
   {
@@ -732,7 +732,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '职业铲屎官指挥家',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet in a commanding conductor-like pose, pointing with paw, looking authoritative, background is a living room, professional studio portrait, detailed fur texture, sharp focus, dramatic conductor lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a formal conductor tuxedo with baton, in a commanding conductor-like pose, pointing with paw, looking authoritative, background is a living room, professional studio portrait, detailed fur texture, sharp focus, dramatic conductor lighting, high quality 8K',
     description: '"它不做事，它只负责指挥你做事。"'
   },
   {
@@ -740,7 +740,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '选择困难症晚期',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet sitting between two food bowls, looking paralyzed with indecision, stressed expression, background is a kitchen, professional studio portrait, detailed fur texture, sharp focus, decision anxiety lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a stressed-out office worker shirt with loosened tie, sitting between two food bowls, looking paralyzed with indecision, stressed expression, background is a kitchen, professional studio portrait, detailed fur texture, sharp focus, decision anxiety lighting, high quality 8K',
     description: '"左边是鸡肉味，右边是牛肉味，它已经纠结了半小时。"'
   },
   {
@@ -748,7 +748,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '热搜体质',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet doing something silly and attention-grabbing, paparazzi style shot, background has camera flashes, professional studio portrait, detailed fur texture, sharp focus, viral moment lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a flashy influencer outfit with sunglasses, doing something silly and attention-grabbing, paparazzi style shot, background has camera flashes, professional studio portrait, detailed fur texture, sharp focus, viral moment lighting, high quality 8K',
     description: '"做什么都能上热搜，主要是够丑够搞笑。"'
   },
   {
@@ -756,7 +756,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '白嫖怪本怪',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet looking at free samples at a store with excited expression, freeloader energy, background is a supermarket, professional studio portrait, detailed fur texture, sharp focus, store lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a bargain hunter vest with many pockets, looking at free samples at a store with excited expression, freeloader energy, background is a supermarket, professional studio portrait, detailed fur texture, sharp focus, store lighting, high quality 8K',
     description: '"花钱是不可能花钱的，这辈子不可能花钱的。"'
   },
   {
@@ -764,7 +764,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '复读机本机',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with mouth open as if repeating something, echo pose, background is a simple room with slight mirror effect, professional studio portrait, detailed fur texture, sharp focus, neutral lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a parrot costume with colorful feathers, with mouth open as if repeating something, echo pose, background is a simple room with slight mirror effect, professional studio portrait, detailed fur texture, sharp focus, neutral lighting, high quality 8K',
     description: '"你说什么它就叫什么，工作内容：复读。"'
   },
   {
@@ -772,7 +772,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '碰瓷专业户',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet dramatically lying down pretending to be hurt, overacting injured pose, background is a sidewalk, professional studio portrait, detailed fur texture, sharp focus, dramatic stage lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a dramatic actor costume with fake bandages, dramatically lying down pretending to be hurt, overacting injured pose, background is a sidewalk, professional studio portrait, detailed fur texture, sharp focus, dramatic stage lighting, high quality 8K',
     description: '"轻轻碰一下就倒地不起，奥斯卡欠它一座小金人。"'
   },
   {
@@ -780,7 +780,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '恐婚恐育代言人',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet backing away from baby toys and small pets with scared expression, avoiding commitment pose, background is a living room, professional studio portrait, detailed fur texture, sharp focus, escape mode lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a freedom-loving bachelor jacket with no commitment badge, backing away from baby toys and small pets with scared expression, avoiding commitment pose, background is a living room, professional studio portrait, detailed fur texture, sharp focus, escape mode lighting, high quality 8K',
     description: '"一听到小孩哭声就想原地消失。"'
   },
   {
@@ -788,7 +788,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '起床困难综合征',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet clinging to a blanket being pulled out of bed, refusing to wake up, background is a cozy bedroom in morning, professional studio portrait, detailed fur texture, sharp focus, soft morning lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing wrinkled sleepy pajamas with bedhead, clinging to a blanket being pulled out of bed, refusing to wake up, background is a cozy bedroom in morning, professional studio portrait, detailed fur texture, sharp focus, soft morning lighting, high quality 8K',
     description: '"每天起床都像在和床谈一场生离死别的恋爱。"'
   },
   {
@@ -796,7 +796,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '人间清醒',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with a knowing exhausted expression, wise but tired eyes, background is a simple contemplative setting, professional studio portrait, detailed fur texture, sharp focus, philosophical soft lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a wise philosopher robe and reading glasses, with a knowing exhausted expression, wise but tired eyes, background is a simple contemplative setting, professional studio portrait, detailed fur texture, sharp focus, philosophical soft lighting, high quality 8K',
     description: '"看透一切但选择躺平，这就是人间清醒。"'
   },
   {
@@ -804,7 +804,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '不想努力了',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet lying flat with a white flag of surrender nearby, completely given up pose, background is a simple floor, professional studio portrait, detailed fur texture, sharp focus, defeated soft lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a giving up t-shirt with quit logo, lying flat with a white flag of surrender nearby, completely given up pose, background is a simple floor, professional studio portrait, detailed fur texture, sharp focus, defeated soft lighting, high quality 8K',
     description: '"努力有什么用？不如睡一觉。"'
   },
   {
@@ -812,7 +812,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '富婆/富豪收留对象',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet with hopeful puppy dog eyes, holding a cardboard sign that says "Adopt Me", sitting cutely, background is a street corner, professional studio portrait, detailed fur texture, sharp focus, sympathetic lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a cute poor-but-adorable outfit with patches, with hopeful puppy dog eyes, holding a cardboard sign that says Adopt Me, sitting cutely, background is a street corner, professional studio portrait, detailed fur texture, sharp focus, sympathetic lighting, high quality 8K',
     description: '"不想奋斗了，只想被包养。"'
   },
   {
@@ -820,7 +820,7 @@ export const TITLES_DATA: TitleData[] = [
     rarity: 'N',
     title: '宇宙级显眼包',
     petType: 'universal',
-    prompt: 'ultra realistic photograph of a pet doing something extremely attention-seeking and dramatic, center of attention pose, background has spotlights pointing at it, professional studio portrait, detailed fur texture, sharp focus, dramatic spotlight lighting, high quality 8K',
+    prompt: 'ultra realistic photograph of a pet wearing a flamboyant sparkly sequin jacket and feather boa, doing something extremely attention-seeking and dramatic, center of attention pose, background has spotlights pointing at it, professional studio portrait, detailed fur texture, sharp focus, dramatic spotlight lighting, high quality 8K',
     description: '"走到哪里都是焦点，主要是太吵了。"'
   },
 ];
