@@ -69,13 +69,13 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="relative pt-5 w-full max-w-md sm:max-w-lg mx-auto">
+    <div className="flex flex-col items-center w-full max-w-md sm:max-w-lg mx-auto">
       {/* 稀有度标签 - 在卡片边框上方，显示中文 */}
       <motion.div
         initial={{ opacity: 0, scale: 0, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="absolute top-0 left-1/2 -translate-x-1/2 z-20"
+        className="z-20 mb-[-12px]"
       >
         <div className={`px-5 py-2 rounded-full ${config.badgeBg} text-white font-bold tracking-wide shadow-lg`}>
           <span className="text-sm">{rarityName}</span>
