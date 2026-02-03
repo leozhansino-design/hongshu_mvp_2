@@ -63,6 +63,29 @@ function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): st
     'the pet must be recognizable as the same individual',
   ].join(', ');
 
+  // 【强制穿衣服】- 必须穿着服装
+  const mustWearClothes = [
+    'MUST be wearing clothes or costume',
+    'wearing a cute outfit or uniform matching the theme',
+    'detailed clothing with visible fabric texture',
+  ].join(', ');
+
+  // 眼睛优化 - 大瞳孔、圆眼睛、更萌
+  const cuteEyes = [
+    'adorable big round eyes',
+    'large dilated pupils like in dim light',
+    'sparkling innocent eyes',
+    'extremely cute expression',
+  ].join(', ');
+
+  // 美化效果 - 让宠物更漂亮可爱
+  const beautify = [
+    'enhanced beauty',
+    'fluffy well-groomed fur',
+    'photogenic and adorable',
+    'magazine cover quality',
+  ].join(', ');
+
   // 真实风格增强词
   const realisticStyle = [
     'ultra realistic photograph',
@@ -73,8 +96,8 @@ function buildEnhancedPrompt(basePrompt: string, petType: PetTypeWithGender): st
     'high quality 8K',
   ].join(', ');
 
-  // 组合：保留原图特征指令 + 职业prompt + 性别特征 + 真实风格
-  return `${preserveOriginal}, ${prompt}, ${genderFeatures}, ${realisticStyle}`;
+  // 组合：保留原图特征 + 必须穿衣服 + 职业prompt + 性别特征 + 可爱眼睛 + 美化 + 真实风格
+  return `${preserveOriginal}, ${mustWearClothes}, ${prompt}, ${genderFeatures}, ${cuteEyes}, ${beautify}, ${realisticStyle}`;
 }
 
 // 注意：Edge Function 由前端结果页面调用，这里不再重复调用
