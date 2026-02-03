@@ -69,13 +69,13 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="relative pt-5">
+    <div className="flex flex-col items-center w-full max-w-md sm:max-w-lg mx-auto">
       {/* 稀有度标签 - 在卡片边框上方，显示中文 */}
       <motion.div
         initial={{ opacity: 0, scale: 0, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="absolute top-0 left-1/2 -translate-x-1/2 z-20"
+        className="z-20 mb-[-12px]"
       >
         <div className={`px-5 py-2 rounded-full ${config.badgeBg} text-white font-bold tracking-wide shadow-lg`}>
           <span className="text-sm">{rarityName}</span>
@@ -86,7 +86,7 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className={`relative w-full max-w-sm sm:max-w-md mx-auto rounded-3xl overflow-hidden ${config.glow}`}
+        className={`relative w-full rounded-3xl overflow-hidden ${config.glow}`}
       >
         {/* 渐变边框 */}
         <div className={`${config.borderGradient} p-[3px] rounded-3xl`}>
@@ -106,14 +106,16 @@ export function ResultCard({ rarity, title, description, image }: ResultCardProp
                 </div>
               )}
 
-              {/* 背景图 */}
+              {/* 背景图 - 保持原图清晰度 */}
               <img
                 src={image}
                 alt={title}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className={`result-card-image w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
                 crossOrigin="anonymous"
+                loading="eager"
+                decoding="sync"
               />
 
               {/* 底部信息区域 */}

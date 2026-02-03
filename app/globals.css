@@ -110,6 +110,20 @@ body {
   box-shadow: 0 8px 24px rgba(255, 107, 53, 0.35);
 }
 
+/* 图片高清渲染 */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* 结果卡片图片 - 保持最高清晰度 */
+.result-card-image {
+  image-rendering: auto;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 /* 3D 透视 */
 .perspective-1000 {
   perspective: 1000px;

@@ -5,14 +5,28 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getAllTitles, TitleData } from '@/lib/titles';
 
+const ADMIN_PASSWORD = 'Dianzi123';
+
 export default function PromotePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [petImage, setPetImage] = useState<string | null>(null);
   const [petType, setPetType] = useState<'cat' | 'dog'>('cat');
   const [selectedTitle, setSelectedTitle] = useState<TitleData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handlePasswordSubmit = () => {
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   // 获取所有头衔
   const allTitles = getAllTitles();
@@ -103,6 +117,41 @@ export default function PromotePage() {
       setIsGenerating(false);
     }
   };
+
+  // 密码验证页面
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6 flex items-center justify-center">
+        <div className="max-w-sm w-full">
+          <h1 className="text-2xl font-bold text-center mb-6">管理员验证</h1>
+          <div className="space-y-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError(false);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="请输入管理员密码"
+              className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+            />
+            {passwordError && (
+              <p className="text-red-400 text-sm text-center">密码错误</p>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handlePasswordSubmit}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold"
+            >
+              验证
+            </motion.button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
